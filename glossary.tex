@@ -1,1 +1,65 @@
-[Glossary content]
+% -------------------------------------------------------------------
+% ACRONYMS
+% -------------------------------------------------------------------
+% The 'type' key is not needed here because we are using \newacronym,
+% which automatically assigns the entry to the default 'main' glossary
+% unless we specify another one. In thesis.tex, the 'acronym' glossary
+% is defined with \newglossary[alg]{acronym}{...}, so we should use
+% the 'type' option to assign it correctly.
+%
+% Usage:
+% \newacronym[type=acronym]{label}{abbreviation}{full text}
+%
+% Example:
+% \newacronym[type=acronym]{em}{EM}{Electro-Motive}
+% -------------------------------------------------------------------
+
+\newacronym[type=acronym]{fct}{FCT}{Faculdade de Ciências e Tecnologia}
+\newacronym[type=acronym]{unl}{UNL}{Universidade Nova de Lisboa}
+\newacronym[type=acronym]{asic}{ASIC}{Application-Specific Integrated Circuit}
+\newacronym[type=acronym]{fpga}{FPGA}{Field-Programmable Gate Array}
+\newacronym[type=acronym]{hdl}{HDL}{Hardware Description Language}
+
+
+% -------------------------------------------------------------------
+% NOTATION
+% -------------------------------------------------------------------
+% The 'type' key specifies that this entry belongs to the 'notation' glossary.
+%
+% Usage:
+% \newglossaryentry{label}{type=notation, name={symbol}, description={meaning}}
+%
+% Example:
+% \newglossaryentry{alpha}{type=notation, name={\(\alpha\)}, description={The fine-structure constant}}
+% -------------------------------------------------------------------
+
+\newglossaryentry{speedoflight}{
+    type=notation,
+    name={\(c\)},
+    description={The speed of light in a vacuum, approximately \(3.00 \times 10^8\) m/s.}
+}
+
+\newglossaryentry{planck}{
+    type=notation,
+    name={\(h\)},
+    description={Planck's constant, relating a photon's energy to its frequency.}
+}
+
+\newglossaryentry{gravity}{
+    type=notation,
+    name={\(G\)},
+    description={The gravitational constant, an empirical physical constant involved in the calculation of gravitational effects.}
+}
+
+% -------------------------------------------------------------------
+% PRINTING THE GLOSSARIES
+% -------------------------------------------------------------------
+% The following commands will print the glossaries in the document.
+% The 'style' key uses the custom tabular styles defined in thesis.tex.
+% -------------------------------------------------------------------
+
+\printglossary[type=acronym, style=tabularabbr, title={List of Abbreviations}]
+\cleardoublepage
+
+\printglossary[type=notation, style=tabularnotation, title={List of Notation}]
+\cleardoublepage
