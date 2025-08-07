@@ -1,0 +1,132 @@
+% ======= Glossary setup and entries =======
+
+
+% -------- Acronyms ----------
+\newacronym[type=acronym]{ai}{AI}{Artificial Intelligence}
+\newacronym[type=acronym]{ml}{ML}{Machine Learning}
+\newacronym[type=acronym]{serdes}{SerDes}{Serializer/Deserializer}
+\newacronym[type=acronym]{io}{IO}{Input/Output}
+\newacronym[type=acronym]{ott}{OTT}{Over-The-Top (services)}
+\newacronym[type=acronym]{pde}{PDE}{Programmable Delay Element}
+\newacronym[type=acronym]{dll}{DLL}{Delay-Locked Loop}
+\newacronym[type=acronym]{pi}{PI}{Phase Interpolator}
+\newacronym[type=acronym]{csi}{CSI}{Current-Starved Inverter}
+\newacronym[type=acronym]{dcd}{DCD}{Duty-Cycle Distortion}
+\newacronym[type=acronym]{pvt}{PVT}{Process, Voltage, Temperature}
+\newacronym[type=acronym]{dac}{DAC}{Digital-to-Analog Converter}
+\newacronym[type=acronym]{inl}{INL}{Integral Non-Linearity}
+\newacronym[type=acronym]{dnl}{DNL}{Differential Non-Linearity}
+\newacronym[type=acronym]{lsb}{LSB}{Least Significant Bit}
+\newacronym[type=acronym]{msb}{MSB}{Most Significant Bit}
+\newacronym[type=acronym]{rms}{RMS}{Root Mean Square}
+\newacronym[type=acronym]{ulvt}{ULVT}{Ultra-Low Voltage Threshold}
+\newacronym[type=acronym]{pll}{PLL}{Phase-Locked Loop}
+\newacronym[type=acronym]{mpg}{MPG}{Multiphase Generator}
+\newacronym[type=acronym]{ui}{UI}{Unit Interval}
+\newacronym[type=acronym]{quadgen}{QuadGen}{Four-phase generator block}
+\newacronym[type=acronym]{octalgen}{OctalGen}{Eight-phase generator block}
+
+% -------- Notation ----------
+\newglossaryentry{dVDD}{
+  name={\(\Delta V_{DD}\)},
+  description={Local supply voltage deviation / bias shift for fine delay tuning},
+  sort={DeltaVDD},
+  type=notation
+}
+\newglossaryentry{tau}{
+  name={\(\tau\)},
+  description={RC time constant},
+  sort={tau},
+  type=notation
+}
+\newglossaryentry{tau_up}{
+  name={\(\tau_{\uparrow}\)},
+  description={Rising edge time constant},
+  sort={tau_up},
+  type=notation
+}
+\newglossaryentry{tau_down}{
+  name={\(\tau_{\downarrow}\)},
+  description={Falling edge time constant},
+  sort={tau_down},
+  type=notation
+}
+\newglossaryentry{Vth}{
+  name={\(V_{\text{th}}\)},
+  description={Threshold voltage (e.g., sampler decision threshold)},
+  sort={Vth},
+  type=notation
+}
+\newglossaryentry{phitarget}{
+  name={\(\phi_{\text{target}}\)},
+  description={Target phase},
+  sort={phitarget},
+  type=notation
+}
+\newglossaryentry{epsphi}{
+  name={\(\varepsilon_{\phi}\)},
+  description={Phase error},
+  sort={epsphi},
+  type=notation
+}
+\newglossaryentry{phitolretune}{
+  name={\(\phi_{\text{tol,retune}}\)},
+  description={Tolerance used for retuning phase},
+  sort={phitolretune},
+  type=notation
+}
+\newglossaryentry{deltat}{
+  name={\(\Delta t\)},
+  description={Time offset or adjustment},
+  sort={deltat},
+  type=notation
+}
+\newglossaryentry{TREF}{
+  name={\(T_{\text{REF}}\)},
+  description={Reference clock period},
+  sort={TREF},
+  type=notation
+}
+\newglossaryentry{DeltaC}{
+  name={\(\Delta C\)},
+  description={Capacitance increment in capacitor bank},
+  sort={DeltaC},
+  type=notation
+}
+\newglossaryentry{CLSB}{
+  name={\(C_{\text{LSB}}\)},
+  description={Least significant capacitance step},
+  sort={CLSB},
+  type=notation
+}
+\newglossaryentry{Ceff}{
+  name={\(C_{\text{eff}}(b)\)},
+  description={Effective node capacitance as function of control bit \(b\)},
+  sort={Ceff},
+  type=notation
+}
+\newglossaryentry{SR}{
+  name={\(SR_{\uparrow}, SR_{\downarrow}\)},
+  description={Slew rates for rising / falling edges},
+  sort={SR},
+  type=notation
+}
+\newglossaryentry{FoMJ}{
+  name={\(\mathrm{FoM_J}\)},
+  description={Jitter figure of merit (normalized per frequency)},
+  sort={FoMJ},
+  type=notation
+}
+\newglossaryentry{PVTcorners}{
+  name={SS, TT, FF, SF, FS},
+  description={Process NMOS-PMOS corner combinations},
+  sort={PVTcorners},
+  type=notation
+}
+
+% Add all glossary entries to the document (so they appear even if not referenced)
+\glsaddall
+
+\printglossary[type=acronym, style=tabularabbr, title={List of Abbreviations}]
+\printglossary[type=notation, style=tabularnotation, title={List of Notation}]
+

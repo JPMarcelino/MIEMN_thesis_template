@@ -1,0 +1,603 @@
+\section{Verilog-A generic vb tuner}
+\label{app:verilog-a-code-2}
+
+\lstset{
+   language=Verilog,
+   basicstyle=\footnotesize\ttfamily,
+   keywordstyle=\color{blue}\bfseries,
+   commentstyle=\color{green!60!black},
+   stringstyle=\color{red},
+   numberstyle=\tiny\color{gray},
+   numbers=left,
+   breaklines=true,
+   breakatwhitespace=true,
+   showstringspaces=false,
+   tabsize=2,
+   frame=single,
+   captionpos=b,
+   morekeywords={module, endmodule, parameter, real, integer, analog, begin, end, electrical, input, output}
+}
+
+\begin{lstlisting}[caption={Verilog-A Generic Vb Tuner Implementation}]
+`include "constants.vams"
+`include "disciplines.vams"
+
+//------------------------------------------------------------------------------
+// Module: generic_vb_tuner
+// Description:
+//   Phase-tunes by adjusting dual voltages (VBN, VBP) to meet a target phase.
+//   Resets and starts on enable pulse. Checks for drift after locking.
+//   Requests previous stage if voltage bounds are hit before locking.
+//   Includes optional dynamic retune tolerance based on step size at lock.
+// Version: 2.1 (Added dynamic retune tolerance)
+//------------------------------------------------------------------------------
+module generic_vb_tuner (
+    clk_ref,
+    clk_delayed,
+    enable_tune_pulse, // Inputs
+    vbn,
+    vbp,
+    tune_locked_pulse,
+    request_prev_stage_pulse // Outputs
+);
+
+  //--------------------------------------------------------------------------
+  // Port Declarations
+  //--------------------------------------------------------------------------
+  input           clk_ref;             // Reference clock signal input.
+  input           clk_delayed;         // Delayed clock signal input for phase comparison.
+  input           enable_tune_pulse;   // Tuning enable pulse; rising edge resets and starts tuning.
+  output          vbn;                 // Output voltage VBN.
+  output          vbp;                 // Output voltage VBP.
+  output          tune_locked_pulse;   // Pulse indicating that tuning has locked.
+  output          request_prev_stage_pulse; // Pulse to request previous stage adjustment.
+
+  //--------------------------------------------------------------------------
+  // Electrical Net Definitions
+  //--------------------------------------------------------------------------
+  electrical clk_ref, clk_delayed, enable_tune_pulse;
+  electrical vbn, vbp, tune_locked_pulse, request_prev_stage_pulse;
+
+  //--------------------------------------------------------------------------
+  // Parameter Definitions
+  //--------------------------------------------------------------------------
+  // --- Basic Operation ---
+  parameter real AVCC = 0.88;      // Supply voltage (V)
+  parameter real target_phase_deg = 270.0;   // Desired target phase delay (degrees)
+  parameter integer start_locked = 1;        // Start in locked state (1) or tuning state (0).
+
+  // --- Tolerances ---
+  parameter real phase_tolerance_lock_deg = 0.1; // Phase tolerance (deg) from TARGET for initial locking
+  parameter real phase_tolerance_retune_deg = 0.2; // Phase deviation tolerance (deg) from TARGET for retuning (used if dynamic tolerance is disabled)
+
+  // --- Voltage Control ---
+  parameter real vbn_min = AVCC / 2.0;
+  parameter real vbn_max = AVCC;
+  parameter real vbn_typ = (vbn_max + vbn_min)/2; // Typical/Reset value
+  parameter real vbp_min = 0.0;
+  parameter real vbp_max = AVCC / 2.0;
+  parameter real vbp_typ = (vbp_max + vbp_min)/2; // Typical/Reset value
+  parameter real voltage_step = 10e-3;       // Voltage adjustment step size (V)
+
+  // --- Timing & History ---
+  parameter integer wait_cycles_after_adjust = 3; // Cycles to wait after VBN/VBP adjustment before decision
+  parameter integer history_size = 4;        // Size of history buffer for oscillation detection (must be even, >= 4)
+
+  // --- Retuning ---
+  parameter integer check_for_retune = 1;    // Enable check for phase drift after locking (1: enable, 0: disable)
+  parameter integer phase_deviation_cycles = 3; // Consecutive cycles phase must be outside retune tolerance to trigger retuning
+  parameter integer enable_dynamic_retune_tolerance = 0; // Enable dynamic retune tolerance based on step size at lock (1: enable, 0: disable)
+  parameter real dynamic_retune_tolerance_multiplier = 1; // Multiplier for step size (e.g., 1.5 => Tol=1.5*Step)
+  parameter real min_dynamic_retune_tolerance_deg = 0.05; // Minimum allowed dynamic retune tolerance (deg)
+
+  // --- Pulse Outputs ---
+  parameter real lock_pulse_width = 1e-10;   // Duration of tune_locked_pulse (s)
+  parameter real req_prev_pulse_width = 1e-10; // Duration of request_prev_stage_pulse (s)
+  parameter real trf = 10p;                 // Transition rise/fall time for pulse outputs (s)
+
+  // --- Debugging ---
+  parameter integer enable_debug_prints = 1; // Enable debug printouts (0:disable, 1:basic, 2:verbose)
+
+  //--------------------------------------------------------------------------
+  // Internal Variable Declarations
+  //--------------------------------------------------------------------------
+  // --- Timing & Phase Measurement ---
+  real t_ref_edge, t_ref_edge_prev, t_dly_edge; // Clock edge timestamps
+  real clk_period, time_diff, phase_meas_deg;   // Timing measurements
+  real phase_error_deg;                         // Signed phase error (measured - target) for adjustment direction
+  real phase_deviation_deg;                     // Absolute phase deviation from target for lock/retune checks
+  real phase_step_at_lock_deg;                  // Measured phase step size at the moment of locking
+
+  // --- State & Control Flow ---
+  integer tuning_active;       // Main state: 1 = Tuning/Waiting, 0 = Locked/Inactive
+  integer cycle_wait_count;    // Counter for wait cycles after adjustment
+  integer out_of_bounds_flag;  // Flag indicating voltage limits reached during adjustment attempt
+  integer ever_called;
+
+  // --- Retuning State ---
+  integer phase_deviation_count; // Counter for consecutive cycles outside retune tolerance
+  real current_retune_tolerance_deg; // Actual tolerance used for retune check (fixed or dynamic)
+
+  // --- History Buffer for Oscillation Detection ---
+  real control_history[0:history_size-1]; // History of VBN values
+  real phase_history[0:history_size-1];   // History of measured phase shifts
+  integer history_index;       // Current index for writing into the history buffer
+  integer history_filled;      // Flag indicating if the history buffer is full
+  integer i;                   // Loop counter variable
+  integer idx_N, idx_N1, idx_N2, idx_N3; // Indices for accessing history buffer
+  integer prev_hist_index;     // Previous history index before incrementing
+
+  // --- Control Values ---
+  real vbn_val, vbp_val;       // Current internal voltage values
+  real vbn_prev, vbp_prev;     // Previous voltage values (before adjustment attempt)
+  real best_control_val;       // VBN value chosen at lock time (oscillation or tolerance)
+  real best_phase_at_lock;     // Phase measured *at the moment* of locking
+
+  // --- Pulse Generation ---
+  integer lock_pulse_active;         // Flag for tune_locked_pulse state
+  real lock_pulse_start_time;     // Timestamp for tune_locked_pulse start
+  integer req_prev_pulse_active;     // Flag for request_prev_stage_pulse state
+  real req_prev_pulse_start_time; // Timestamp for request_prev_stage_pulse start
+
+  // --- Oscillation Detection ---
+  integer oscillation_detected;
+
+  // --- Helper variable ---
+  real abs_phase_diff; // For calculating step size
+
+  //--------------------------------------------------------------------------
+  // Analog Behavior
+  //--------------------------------------------------------------------------
+  analog begin
+
+    //--------------------------------------------------------------------------
+    // Initialization Block
+    //--------------------------------------------------------------------------
+    @(initial_step) begin
+      // Timing & Phase
+      t_ref_edge = 0.0; t_ref_edge_prev = 0.0; t_dly_edge = 0.0;
+      clk_period = 0.0; time_diff = 0.0; phase_meas_deg = 0.0;
+      phase_error_deg = 0.0; phase_deviation_deg = 0.0;
+      // Initialize step size to lock tolerance as a safe default
+      phase_step_at_lock_deg = phase_tolerance_lock_deg;
+
+      // State & Control
+      tuning_active = !start_locked; // Start tuning if start_locked is 0
+      cycle_wait_count = 0;
+      out_of_bounds_flag = 0;
+      ever_called = !start_locked;
+
+      // Retuning
+      phase_deviation_count = 0;
+      current_retune_tolerance_deg = phase_tolerance_retune_deg; // Initialize
+
+      // Control Values
+      vbn_val = vbn_typ; // Initialize to typical values
+      vbp_val = vbp_typ;
+      vbn_prev = vbn_val; vbp_prev = vbp_val;
+      best_control_val = vbn_val;
+      best_phase_at_lock = 0.0;
+
+      // History Buffer
+      history_index = 0; history_filled = 0;
+      oscillation_detected = 0;
+      for (i = 0; i < history_size; i = i + 1) begin
+         control_history[i] = vbn_min - 1.0; // Initialize with invalid value
+         phase_history[i] = 0.0;
+      end
+
+      // Pulse Generation
+      lock_pulse_active = 0; lock_pulse_start_time = 0.0;
+      req_prev_pulse_active = 0; req_prev_pulse_start_time = 0.0;
+
+      if (enable_debug_prints >= 1) begin
+         $display("[%e: INFO(%m)] Initializing VB Tuner. Start state: %s. VBN=%f, VBP=%f. DynTolEn=%d",
+                  $abstime, (tuning_active ? "TUNING" : "LOCKED"), vbn_val, vbp_val, enable_dynamic_retune_tolerance);
+      end
+      // Parameter checks
+      if (history_size < 4 || (history_size % 2 != 0)) begin
+         $strobe("Error(%m): history_size must be even and >= 4.");
+      end
+      if (vbn_min >= vbn_max || vbp_min >= vbp_max) begin
+         $strobe("Error(%m): Invalid voltage min/max parameters (min >= max).");
+      end
+      if (vbn_typ < vbn_min || vbn_typ > vbn_max || vbp_typ < vbp_min || vbp_typ > vbp_max) begin
+         $strobe("Warning(%m): Typical voltage values are outside min/max bounds.");
+      end
+      if (phase_tolerance_retune_deg < 0 || phase_tolerance_lock_deg < 0) begin
+         $strobe("Warning(%m): Phase tolerances should be non-negative.");
+      end
+      if (lock_pulse_width <= 0 || req_prev_pulse_width <= 0) begin
+         $strobe("Warning(%m): Pulse widths should be positive.");
+      end
+       if (phase_deviation_cycles <= 0) begin
+         $strobe("Warning(%m): phase_deviation_cycles should be positive.");
+       end
+       if (enable_dynamic_retune_tolerance == 1) begin
+          if (dynamic_retune_tolerance_multiplier <= 0) begin
+             $strobe("Warning(%m): dynamic_retune_tolerance_multiplier should ideally be > 0.0");
+          end
+          if (min_dynamic_retune_tolerance_deg < 0) begin
+             $strobe("Warning(%m): min_dynamic_retune_tolerance_deg should be non-negative.");
+          end
+       end
+    end // initial_step
+
+    //--------------------------------------------------------------------------
+    // Tuning Enable Pulse Event
+    //--------------------------------------------------------------------------
+    @(cross(V(enable_tune_pulse) - AVCC / 2.0, +1)) begin
+       if (enable_debug_prints >= 1) begin
+          $display("[%e: INFO(%m)] Enable pulse received. Resetting state and starting tuning.", $abstime);
+       end
+       ever_called = 1;
+       tuning_active = 1; // Start tuning
+       cycle_wait_count = 0;
+       history_index = 0;
+       history_filled = 0;
+       phase_deviation_count = 0;
+       out_of_bounds_flag = 0;
+       lock_pulse_active = 0; // Cancel pending pulses
+       req_prev_pulse_active = 0;       // Reset timing references
+       t_ref_edge = 0.0; t_ref_edge_prev = 0.0; t_dly_edge = 0.0;
+       clk_period = 0.0;
+       best_phase_at_lock = 0.0; // Reset stored lock phase
+       // Reset step size to default on reset
+       phase_step_at_lock_deg = phase_tolerance_lock_deg;
+       // Optionally reset voltages to typical, or keep current values as starting point
+       // vbn_val = vbn_typ;
+       // vbp_val = vbp_typ;
+       // Clear history
+       for (i = 0; i < history_size; i = i + 1) begin
+          control_history[i] = vbn_min - 1.0;
+          phase_history[i] = 0.0;
+       end
+    end
+
+    //--------------------------------------------------------------------------
+    // Output Assignments
+    // Drive VBN/VBP outputs. Generate pulses.
+    // If requesting previous stage, output typical values temporarily.
+    //--------------------------------------------------------------------------
+    V(vbn) <+ transition( (req_prev_pulse_active ? vbn_typ : vbn_val), 0, trf);
+    V(vbp) <+ transition( (req_prev_pulse_active ? vbp_typ : vbp_val), 0, trf);
+    V(tune_locked_pulse) <+ transition((lock_pulse_active ? AVCC : 0.0), 0, trf);
+    V(request_prev_stage_pulse) <+ transition((req_prev_pulse_active ? AVCC : 0.0), 0, trf);
+
+    //--------------------------------------------------------------------------
+    // Main Logic: Reference Clock Edge Event (-ve edge)
+    //--------------------------------------------------------------------------
+    @(cross(V(clk_ref) - AVCC / 2.0, -1)) begin
+      // --- Period Calculation ---
+      if (t_ref_edge > 0.0) begin
+        clk_period = $abstime - t_ref_edge;
+        if (clk_period <= 1p) begin // Check for valid period
+           clk_period = 0.0;
+        end else begin
+           if (enable_debug_prints >= 2) begin
+              $display("[%e: DEBUG(%m)] Measured ref period = %e", $abstime, clk_period);
+           end
+        end
+      end
+      t_ref_edge_prev = t_ref_edge; // Store previous edge time
+      t_ref_edge = $abstime;     // Store current edge time
+
+      // --- Phase Calculation (Requires valid edges and period) ---
+      // Also ensure previous stage request is not active, as timing might be unstable
+      if (t_dly_edge > 0.0 && clk_period > 0.0 && t_dly_edge > t_ref_edge_prev && req_prev_pulse_active == 0) begin
+        time_diff = t_dly_edge - t_ref_edge_prev; // Delay relative to previous ref edge
+
+        // Normalize delay to be within one period
+        while (time_diff < 0.0) begin time_diff = time_diff + clk_period; end
+        while (time_diff >= clk_period) begin time_diff = time_diff - clk_period; end
+
+        phase_meas_deg = (time_diff / clk_period) * 360.0;
+
+        if (enable_debug_prints >= 2) begin
+           $display("[%e: DEBUG(%m)] Phase calculated. Delay=%e, Phase=%f deg", $abstime, time_diff, phase_meas_deg);
+        end
+
+        //------------------------------------------------------------------
+        // State Machine Logic: Locked or Tuning
+        //------------------------------------------------------------------
+
+        // --- State 1: Locked ---
+        if (tuning_active == 0) begin
+           // Check for phase drift if enabled and called at least once
+           if (check_for_retune == 1 && ever_called == 1) begin
+              // Calculate absolute deviation from target
+              phase_deviation_deg = phase_meas_deg - target_phase_deg;
+              // Normalize deviation to [-180, 180]
+              if (phase_deviation_deg > 180.0) phase_deviation_deg = phase_deviation_deg - 360.0;
+              if (phase_deviation_deg <= -180.0) phase_deviation_deg = phase_deviation_deg + 360.0;
+              phase_deviation_deg = abs(phase_deviation_deg);
+
+              // Determine the retune tolerance to use (fixed or dynamic)
+              if (enable_dynamic_retune_tolerance == 1) begin
+                 current_retune_tolerance_deg = phase_step_at_lock_deg * dynamic_retune_tolerance_multiplier;
+                 current_retune_tolerance_deg = max(current_retune_tolerance_deg, min_dynamic_retune_tolerance_deg);
+                 if (enable_debug_prints >= 2) begin
+                    $display("[%e: DEBUG(%m)] Locked check (DynTol): Phase=%f, Target=%f, Dev=%f, StepAtLock=%f, DynTol=%f",
+                             $abstime, phase_meas_deg, target_phase_deg, phase_deviation_deg, phase_step_at_lock_deg, current_retune_tolerance_deg);
+                 end
+              end else begin
+                 current_retune_tolerance_deg = phase_tolerance_retune_deg; // Use fixed tolerance
+                 if (enable_debug_prints >= 2) begin
+                    $display("[%e: DEBUG(%m)] Locked check (FixTol): Phase=%f, Target=%f, Dev=%f, FixTol=%f",
+                             $abstime, phase_meas_deg, target_phase_deg, phase_deviation_deg, current_retune_tolerance_deg);
+                 end
+              end
+
+              // Check if deviation exceeds the determined retune tolerance
+              if (phase_deviation_deg > current_retune_tolerance_deg) begin
+                 phase_deviation_count = phase_deviation_count + 1;
+                 if (enable_debug_prints >= 1) begin
+                    $display("[%e: INFO(%m)] Phase deviation detected (Locked): Count=%d, Dev=%f > Tol=%f",
+                             $abstime, phase_deviation_count, phase_deviation_deg, current_retune_tolerance_deg);
+                 end
+                 // If deviation persists, unlock for retuning
+                 if (phase_deviation_count >= phase_deviation_cycles) begin
+                    if (enable_debug_prints >= 1) begin
+                       $display("[%e: INFO(%m)] Consistent deviation. Unlocking for retuning.", $abstime);
+                    end
+                    tuning_active = 1; // Re-enable tuning
+                    phase_deviation_count = 0;
+                    cycle_wait_count = 0; // Reset wait counter for tuning phase
+                    history_index = 0; // Reset history
+                    history_filled = 0;
+                    lock_pulse_active = 0; // Ensure lock pulse is off
+                    // Reset step size to default when retuning starts
+                    phase_step_at_lock_deg = phase_tolerance_lock_deg;
+                    // Clear history
+                    for (i = 0; i < history_size; i = i + 1) begin
+                       control_history[i] = vbn_min - 1.0;
+                       phase_history[i] = 0.0;
+                    end
+                 end
+              end else begin
+                 // Deviation within tolerance, reset counter
+                 phase_deviation_count = 0;
+              end
+           end // end check_for_retune
+        // --- State 2: Tuning Active ---
+        end else begin // if (tuning_active == 1)
+            phase_deviation_count = 0; // Ensure counter is 0 when tuning
+            cycle_wait_count = cycle_wait_count + 1; // Increment adjustment wait counter
+
+            // Wait for 'wait_cycles_after_adjust' before making a decision
+            if (cycle_wait_count >= wait_cycles_after_adjust) begin
+              if (enable_debug_prints >= 2) begin
+                 $display("[%e: DEBUG(%m)] Entering tuning decision logic.", $abstime);
+              end
+              oscillation_detected = 0;
+              out_of_bounds_flag = 0;
+
+              // --- Update History Buffer ---
+              control_history[history_index] = vbn_val;
+              phase_history[history_index] = phase_meas_deg;
+              prev_hist_index = history_index;
+              history_index = (history_index + 1) % history_size;
+              // Check if buffer is filled (only after the last index is written before wrap-around)
+              if (history_index == 0 && control_history[history_size-1] > vbn_min - 0.5) begin // Check if last entry was valid
+                 history_filled = 1;
+              end
+              if (enable_debug_prints >= 2) begin
+                 $display("[%e: DEBUG(%m)] History updated: Idx=%d, VBN=%f, Phase=%f, Filled=%d",
+                          $abstime, prev_hist_index, control_history[prev_hist_index], phase_history[prev_hist_index], history_filled);
+              end
+
+              // --- Oscillation Detection ---
+              if (history_filled) begin
+                idx_N = prev_hist_index; // Most recent entry index
+                idx_N1 = (prev_hist_index + history_size - 1) % history_size;
+                idx_N2 = (prev_hist_index + history_size - 2) % history_size;
+                idx_N3 = (prev_hist_index + history_size - 3) % history_size;
+
+                // Check for A-B-A-B pattern in VBN values (within half a step)
+                if (abs(control_history[idx_N] - control_history[idx_N2]) < voltage_step / 2.0 &&
+                    abs(control_history[idx_N1] - control_history[idx_N3]) < voltage_step / 2.0 &&
+                    abs(control_history[idx_N] - control_history[idx_N1]) > voltage_step / 2.0) begin
+                  oscillation_detected = 1;
+
+                  // Calculate phase step size between oscillating points
+                  abs_phase_diff = phase_history[idx_N] - phase_history[idx_N1];
+                  if (abs_phase_diff > 180.0) abs_phase_diff = abs_phase_diff - 360.0;
+                  if (abs_phase_diff <= -180.0) abs_phase_diff = abs_phase_diff + 360.0;
+                  phase_step_at_lock_deg = abs(abs_phase_diff);
+                  if (enable_debug_prints >= 1) begin
+                     $display("[%e: INFO(%m)] Oscillation detected. Measured step size: %f deg", $abstime, phase_step_at_lock_deg);
+                  end
+
+                  // Find which oscillating point (N or N-1) is closer to the target phase
+                  phase_error_deg = abs(phase_history[idx_N] - target_phase_deg); // Error for point N
+                  best_phase_at_lock = abs(phase_history[idx_N1] - target_phase_deg); // Temp store error for N-1
+
+                  if (phase_error_deg <= best_phase_at_lock) begin // Point N is better or equal
+                     best_control_val = control_history[idx_N];
+                     best_phase_at_lock = phase_history[idx_N]; // Store actual phase
+                  end else begin // Point N-1 is better
+                     best_control_val = control_history[idx_N1];
+                     best_phase_at_lock = phase_history[idx_N1]; // Store actual phase
+                  end
+
+                  if (enable_debug_prints >= 1) begin
+                     $display("[%e: INFO(%m)] Oscillation detected. Locking to best VBN=%f (Phase=%f, Err=%f)",
+                              $abstime, best_control_val, best_phase_at_lock, abs(best_phase_at_lock - target_phase_deg));
+                  end
+                  vbn_val = best_control_val; // Set the final VBN
+                  vbp_val = AVCC - vbn_val; // Assume complementary voltage for VBP
+                  vbp_val = max(vbp_min, min(vbp_max, vbp_val)); // Clamp VBP
+
+                  // === LOCKING ACTION (Oscillation) ===
+                  tuning_active = 0; // Lock
+                  if (lock_pulse_active == 0) begin
+                     lock_pulse_active = 1;
+                     lock_pulse_start_time = $abstime;
+                     if (enable_debug_prints >= 1) begin
+                        $display("[%e: INFO(%m)] LOCK (Osc). Triggering lock pulse.", $abstime);
+                     end
+                  end
+                end // End oscillation pattern check
+              end // End history_filled checks
+
+              //--------------------------------------------------------------------------
+              // Voltage Adjustment (if not locked by oscillation)
+              //--------------------------------------------------------------------------
+              if (tuning_active == 1) begin // Check again, might have locked due to oscillation
+                // Calculate signed phase error relative to target for adjustment direction
+                phase_error_deg = phase_meas_deg - target_phase_deg;
+                // Normalize error to approx [-180, 180]
+                if (phase_error_deg > 180.0) phase_error_deg = phase_error_deg - 360.0;
+                if (phase_error_deg <= -180.0) phase_error_deg = phase_error_deg + 360.0;
+
+                // Check against initial locking tolerance
+                if (abs(phase_error_deg) <= phase_tolerance_lock_deg) begin
+                  // Phase is within initial tolerance: Lock the tuning.
+
+                  // Calculate step size if possible (history filled and last step was an adjustment)
+                  if (history_filled) begin
+                     idx_N = prev_hist_index; // Most recent entry index
+                     idx_N1 = (prev_hist_index + history_size - 1) % history_size;
+                     // Check if VBN actually changed in the last step
+                     if (abs(control_history[idx_N] - control_history[idx_N1]) > voltage_step / 2.0) begin
+                        abs_phase_diff = phase_history[idx_N] - phase_history[idx_N1];
+                        if (abs_phase_diff > 180.0) abs_phase_diff = abs_phase_diff - 360.0;
+                        if (abs_phase_diff <= -180.0) abs_phase_diff = abs_phase_diff + 360.0;
+                        phase_step_at_lock_deg = abs(abs_phase_diff);
+                        if (enable_debug_prints >= 1) begin
+                           $display("[%e: INFO(%m)] Locking (Tol). Measured step size: %f deg", $abstime, phase_step_at_lock_deg);
+                        end
+                     end else if (enable_debug_prints >= 2) begin
+                         $display("[%e: DEBUG(%m)] Locking (Tol). No VBN change in last step, keeping previous step size: %f deg", $abstime, phase_step_at_lock_deg);
+                     end
+                  end else if (enable_debug_prints >= 2) begin
+                      $display("[%e: DEBUG(%m)] Locking (Tol). History not full, keeping default/previous step size: %f deg", $abstime, phase_step_at_lock_deg);
+                  end
+
+
+                  if (enable_debug_prints >= 1) begin
+                     $display("[%e: INFO(%m)] Phase in tolerance (%f <= %f). Locking VBN=%f, VBP=%f (Phase=%f).",
+                              $abstime, abs(phase_error_deg), phase_tolerance_lock_deg, vbn_val, vbp_val, phase_meas_deg);
+                  end
+                  best_control_val = vbn_val;         // Save current setting
+                  best_phase_at_lock = phase_meas_deg; // Save the phase measured at lock time
+
+                  // === LOCKING ACTION (Tolerance) ===
+                  tuning_active = 0; // Lock
+                  if (lock_pulse_active == 0) begin
+                     lock_pulse_active = 1;
+                     lock_pulse_start_time = $abstime;
+                     if (enable_debug_prints >= 1) begin
+                        $display("[%e: INFO(%m)] LOCK (Tol). Triggering lock pulse.", $abstime);
+                     end
+                  end
+                // Adjust voltages if outside initial tolerance
+                end else begin
+                  vbn_prev = vbn_val; // Store current values before attempting adjustment
+                  vbp_prev = vbp_val;
+
+                  if (phase_error_deg < 0) begin // Phase low (too fast) -> increase delay -> weaken driver -> VBN down, VBP up
+                     vbn_val = max(vbn_val - voltage_step, vbn_min);
+                     vbp_val = min(vbp_val + voltage_step, vbp_max);
+                     if (enable_debug_prints >= 1 && (vbn_val != vbn_prev || vbp_val != vbp_prev)) begin
+                        $display("[%e: INFO(%m)] Phase low (Error=%f). Adjusting: VBN=%f, VBP=%f",
+                                 $abstime, phase_error_deg, vbn_val, vbp_val);
+                     end
+                  end else begin // Phase high (too slow) -> decrease delay -> strengthen driver -> VBN up, VBP down
+                     vbn_val = min(vbn_val + voltage_step, vbn_max);
+                     vbp_val = max(vbp_val - voltage_step, vbp_min);
+                     if (enable_debug_prints >= 1 && (vbn_val != vbn_prev || vbp_val != vbp_prev)) begin
+                        $display("[%e: INFO(%m)] Phase high (Error=%f). Adjusting: VBN=%f, VBP=%f",
+                                 $abstime, phase_error_deg, vbn_val, vbp_val);
+                     end
+                  end
+
+                  //--------------------------------------------------------------------------
+                  // Voltage Bounds Check and Request Previous Stage
+                  // Check if adjustment hit bounds AND phase is still outside lock tolerance
+                  //--------------------------------------------------------------------------
+                  out_of_bounds_flag = (vbn_val <= vbn_min || vbn_val >= vbn_max ||
+                                        vbp_val <= vbp_min || vbp_val >= vbp_max);
+
+                  if (out_of_bounds_flag == 1 && abs(phase_error_deg) > phase_tolerance_lock_deg) begin
+                     if (enable_debug_prints >= 1) begin
+                        $display("[%e: WARNING(%m)] Voltage limits hit before phase lock. VBN=%f [%f,%f], VBP=%f [%f,%f]. Requesting previous stage.",
+                                 $abstime, vbn_val, vbn_min, vbn_max, vbp_val, vbp_min, vbp_max);
+                     end
+                     // Revert to previous values before hitting bound? Optional, currently not reverting.
+                     // vbn_val = vbn_prev;
+                     // vbp_val = vbp_prev;
+
+                     // Trigger request pulse if not already active
+                     if (req_prev_pulse_active == 0) begin
+                        req_prev_pulse_active = 1;
+                        req_prev_pulse_start_time = $abstime;
+                        // Reset internal state while requesting prev stage
+                        vbn_val = vbn_typ; // Go back to typical values
+                        vbp_val = vbp_typ;
+                        cycle_wait_count = 0;
+                        history_index = 0;
+                        history_filled = 0;
+                        phase_deviation_count = 0; // Reset retune counter too
+                        best_phase_at_lock = 0.0;
+                        // Reset step size to default
+                        phase_step_at_lock_deg = phase_tolerance_lock_deg;
+                        // Clear history
+                        for (i = 0; i < history_size; i = i + 1) begin
+                           control_history[i] = vbn_min - 1.0;
+                           phase_history[i] = 0.0;
+                        end
+                        if (enable_debug_prints >= 1) begin
+                           $display("[%e: INFO(%m)] Previous stage requested. Resetting internal state.", $abstime);
+                        end
+                        // Keep tuning_active = 1, will retry after pulse ends
+                     end
+                  end // End bounds check and request logic
+                end // End voltage adjustment logic (phase outside tolerance)
+              end // End Voltage Adjustment block (!locked)
+
+              cycle_wait_count = 0; // Reset cycle counter after decision/adjustment attempt
+            end // End Tuning Decision Logic (wait_cycles_after_adjust met)
+        end // End Tuning State Logic (tuning_active == 1)
+      end // End if valid edges/period for phase calculation
+    end // End event: reference clock edge
+
+    //--------------------------------------------------------------------------
+    // Delayed Clock Edge Event (-ve edge)
+    //--------------------------------------------------------------------------
+    @(cross(V(clk_delayed) - AVCC / 2.0, -1)) begin
+      // Capture delayed clock edge time. Needed even when locked for retune check.
+      // Only skip update if previous stage request is active (timing might be invalid)
+      if (req_prev_pulse_active == 0) begin
+          t_dly_edge = $abstime;
+          if (enable_debug_prints >= 2) begin
+             $display("[%e: DEBUG(%m)] Delayed clock edge detected at time %e", $abstime, t_dly_edge);
+          end
+      end
+    end // End delayed clock edge event
+
+    //--------------------------------------------------------------------------
+    // Pulse Termination Logic
+    //--------------------------------------------------------------------------
+    // Lock Pulse
+    if (lock_pulse_active == 1 && (($abstime - lock_pulse_start_time) >= lock_pulse_width)) begin
+      lock_pulse_active = 0;
+      if (enable_debug_prints >= 2) begin
+         $display("[%e: DEBUG(%m)] Lock pulse ended.", $abstime);
+      end
+    end
+    // Request Previous Stage Pulse
+    if (req_prev_pulse_active == 1 && (($abstime - req_prev_pulse_start_time) >= req_prev_pulse_width)) begin
+      req_prev_pulse_active = 0;
+      if (enable_debug_prints >= 2) begin
+         $display("[%e: DEBUG(%m)] Previous stage request pulse ended.", $abstime);
+      end
+      // After request pulse ends, reset timing to avoid using stale t_dly_edge
+      t_dly_edge = 0.0;
+      t_ref_edge = 0.0; // Also reset ref edge to force period recalc
+    end
+
+  end // End analog begin
+endmodule
+
+\end{lstlisting}

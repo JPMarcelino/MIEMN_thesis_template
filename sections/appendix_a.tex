@@ -1,0 +1,490 @@
+\section{Verilog-A generic capacitor tuner}
+\label{app:verilog-a-code}
+
+\lstset{
+   language=Verilog,
+   basicstyle=\footnotesize\ttfamily,
+   keywordstyle=\color{blue}\bfseries,
+   commentstyle=\color{green!60!black},
+   stringstyle=\color{red},
+   numberstyle=\tiny\color{gray},
+   numbers=left,
+   breaklines=true,
+   breakatwhitespace=true,
+   showstringspaces=false,
+   tabsize=2,
+   frame=single,
+   captionpos=b,
+   morekeywords={module, endmodule, parameter, real, integer, analog, begin, end, electrical, input, output}
+}
+
+\begin{lstlisting}[caption={Verilog-A Generic Capacitor Tuner Implementation}]
+`include "constants.vams"
+`include "disciplines.vams"
+
+//------------------------------------------------------------------------------
+// Module: generic_cap_tuner_4bit
+// Description:
+//   A phase-tuning block that adjusts a 4-bit capacitor code until the
+//   measured phase delay between a reference clock and a delayed clock meets
+//   the desired target. A tuning enable pulse resets internal state and
+//   starts the tuning process. After locking, it periodically checks if the
+//   phase drifts outside a specified retune tolerance relative to the target.
+//   If the code reaches its bounds (0 or 15) and stays there, it locks.
+//------------------------------------------------------------------------------
+module generic_cap_tuner_4bit (
+    clk_ref,
+    clk_delayed,
+    enable_tune_pulse, // Inputs
+    cap_code,
+    tune_locked_pulse  // Outputs
+);
+
+  //--------------------------------------------------------------------------
+  // Port Declarations
+  //--------------------------------------------------------------------------
+  input           clk_ref;             // Reference clock signal input.
+  input           clk_delayed;         // Delayed clock signal input for phase comparison.
+  input           enable_tune_pulse;   // Tuning enable pulse; rising edge resets and starts tuning.
+  output  [3:0]   cap_code;            // 4-bit capacitor control code output.
+  output          tune_locked_pulse;   // Pulse indicating that tuning has locked.
+
+  //--------------------------------------------------------------------------
+  // Electrical Net Definitions
+  //--------------------------------------------------------------------------
+  electrical clk_ref, clk_delayed, enable_tune_pulse, tune_locked_pulse;
+  electrical [3:0] cap_code; // cap_code[0]=LSB, cap_code[3]=MSB
+
+  //--------------------------------------------------------------------------
+  // Parameter Definitions
+  //--------------------------------------------------------------------------
+  parameter real supply_voltage = 0.88;      // Supply voltage (V) used for logic levels.
+  parameter real target_phase_deg = 270.0;   // Desired target phase delay (in degrees).
+  parameter real phase_tolerance_deg = 1.0; // Phase tolerance (degrees) from TARGET for initial locking.
+  parameter real phase_tolerance_retune_deg = 1.5; // Phase deviation tolerance (degrees) from TARGET for retuning. (Must be >= phase_tolerance_deg)
+  parameter integer wait_cycles = 3;          // Number of clock cycles to wait after a cap code adjustment before making the next decision.
+  parameter integer history_size = 4;         // Size of the history buffer for oscillation detection (must be even and >= 4).
+  parameter integer initial_cap_val = 7;      // Initial capacitance code (0-15) on reset/startup.
+  parameter real lock_pulse_width = 1e-10;    // Duration of the tune_locked_pulse output signal.
+  parameter integer phase_deviation_cycles = 5; // Consecutive cycles phase must be outside retune tolerance to trigger retuning.
+  parameter integer enable_debug_prints = 1;  // Enable verbose debug printouts (1: enable, 0: disable).
+  parameter integer start_locked = 1;         // Start in locked state (1) or tuning state (0).
+  parameter real trf = 10p;                  // Transition rise/fall time for output pulses.
+  parameter integer check_for_retune = 0;
+
+  //--------------------------------------------------------------------------
+  // Internal Variable Declarations
+  //--------------------------------------------------------------------------
+
+  // Timing and Phase Variables
+  real t_edge_in, t_edge_in_prev, t_edge_indly; // Clock edge timestamps
+  real period_in, measured_delay, phase_shift; // Timing measurements
+  real phase_error;                             // Signed phase error used for tuning direction
+  real phase_deviation;                         // Absolute phase deviation from target used for retune check
+
+  // State and Control Variables
+  integer cap_val;             // Current capacitance code (0-15).
+  integer cycle_count;         // Counter for wait cycles after adjustment.
+  integer locked;              // Tuning state: 0 = Tuning active, 1 = Locked/Inactive.
+  integer adjustment_made;     // Flag indicating if cap_val was changed in the current cycle.
+  integer oscillation_detected;// Flag indicating oscillation was detected.
+  integer phase_deviation_count; // Counter for consecutive cycles outside retune tolerance.
+
+  // History Buffer for Oscillation Detection
+  integer cap_history[0:history_size-1];    // History of capacitor codes.
+  real phase_history[0:history_size-1];   // History of measured phase shifts.
+  integer history_index;       // Current index for writing into the history buffer.
+  integer history_filled;      // Flag indicating if the history buffer is full.
+  integer best_cap_code;       // Best cap code found during oscillation.
+  real best_phase_shift;      // Phase measured *at the moment* of locking.
+  integer i;                   // Loop counter variable.
+  integer idx_N, idx_N1, idx_N2, idx_N3; // Indices for accessing history buffer.
+  integer prev_hist_index;     // Previous history index before incrementing.
+
+  // Lock Pulse Generation Variables
+  integer pulse_active;        // Flag indicating the lock pulse is currently active.
+  real pulse_start_time;      // Timestamp when the lock pulse started.
+
+  //--------------------------------------------------------------------------
+  // Analog Behavior
+  //--------------------------------------------------------------------------
+  analog begin
+
+    //--------------------------------------------------------------------------
+    // Initialization Block
+    // Reset all internal timing, state, and history variables. Start in the
+    // state defined by 'start_locked'. Perform parameter checks.
+    //--------------------------------------------------------------------------
+    @(initial_step) begin
+      t_edge_in = 0.0; t_edge_in_prev = 0.0; t_edge_indly = 0.0;
+      period_in = 0.0; measured_delay = 0.0; phase_shift = 0.0;
+      cap_val = initial_cap_val;
+      cycle_count = 0;
+      locked = start_locked;
+      adjustment_made = 0; oscillation_detected = 0;
+      phase_deviation_count = 0; phase_deviation = 0.0;
+      history_index = 0; history_filled = 0;
+      best_cap_code = cap_val; best_phase_shift = 0.0; // Will store phase at lock time
+      pulse_active = 0; pulse_start_time = 0.0;
+
+      // Initialize history buffers
+      for (i = 0; i < history_size; i = i + 1) begin
+         cap_history[i] = -1; // Use -1 to indicate invalid entry initially
+         phase_history[i] = 0.0;
+      end
+
+      if (enable_debug_prints) begin
+         $display("[%e: DEBUG(%m)] Initializing CAP Tuner. Start state: %s. InitCap=%d",
+                  $abstime, (locked ? "LOCKED" : "TUNING"), initial_cap_val);
+      end
+      // Parameter checks
+      if (history_size < 4 || (history_size % 2 != 0)) begin
+         $strobe("Error(%m): history_size must be even and >= 4.");
+      end
+      if (phase_tolerance_deg < 0) begin
+         $strobe("Warning(%m): phase_tolerance_deg should be non-negative.");
+      end
+       if (phase_tolerance_retune_deg < phase_tolerance_deg) begin
+         $strobe("Warning(%m): phase_tolerance_retune_deg should ideally be >= phase_tolerance_deg.");
+      end
+      if (lock_pulse_width <= 0) begin
+         $strobe("Warning(%m): lock_pulse_width should be positive.");
+      end
+       if (phase_deviation_cycles <= 0) begin
+         $strobe("Warning(%m): phase_deviation_cycles should be positive.");
+      end
+       if (initial_cap_val < 0 || initial_cap_val > 15) begin
+         $strobe("Warning(%m): initial_cap_val (%d) out of range [0-15].", initial_cap_val);
+         cap_val = 7; // Default to mid-range if invalid
+       end
+    end // initial_step
+
+    //--------------------------------------------------------------------------
+    // Tuning Enable Pulse Event
+    // When the enable pulse rises (detected at mid-supply), reset internal state
+    // and restart the tuning process.
+    //--------------------------------------------------------------------------
+    @(cross(V(enable_tune_pulse) - supply_voltage / 2.0, +1)) begin
+       if (enable_debug_prints) begin
+          $display("[%e: DEBUG(%m)] CAP Enable pulse received. Resetting and starting tuning.", $abstime);
+       end
+       locked = 0; // Begin tuning
+       cycle_count = 0;
+       history_filled = 0;
+       history_index = 0;
+       phase_deviation_count = 0;
+       // cap_val = initial_cap_val; // Reset cap value to initial
+       pulse_active = 0; // Cancel any pending lock pulse
+       // Reset timing references
+       t_edge_in = 0.0;
+       t_edge_in_prev = 0.0;
+       t_edge_indly = 0.0;
+       period_in = 0.0;
+       best_phase_shift = 0.0; // Reset stored lock phase
+       // Clear history
+       for (i = 0; i < history_size; i = i + 1) begin
+          cap_history[i] = -1;
+          phase_history[i] = 0.0;
+       end
+    end
+
+    //--------------------------------------------------------------------------
+    // Output Assignments
+    // Drive the cap_code outputs based on the integer cap_val.
+    // Generate the tune_locked_pulse based on pulse_active state.
+    //--------------------------------------------------------------------------
+    // Assign cap_val bits to electrical outputs
+    V(cap_code[0]) <+ transition((((cap_val >> 0) & 1) ? supply_voltage : 0.0), 0, trf); // LSB
+    V(cap_code[1]) <+ transition((((cap_val >> 1) & 1) ? supply_voltage : 0.0), 0, trf);
+    V(cap_code[2]) <+ transition((((cap_val >> 2) & 1) ? supply_voltage : 0.0), 0, trf);
+    V(cap_code[3]) <+ transition((((cap_val >> 3) & 1) ? supply_voltage : 0.0), 0, trf); // MSB
+
+    // Generate lock pulse output
+    V(tune_locked_pulse) <+ transition( (pulse_active ? supply_voltage : 0.0), 0, trf);
+
+    //--------------------------------------------------------------------------
+    // Main Logic: Reference Clock Edge Event
+    // Detects a negative-going edge on the reference clock to perform period
+    // measurement, calculate phase shift, and update tuning/locking state.
+    //--------------------------------------------------------------------------
+    @(cross(V(clk_ref) - supply_voltage / 2.0, -1)) begin
+      // --- Period Calculation ---
+      if (t_edge_in > 0.0) begin
+        period_in = $abstime - t_edge_in;
+        if (period_in <= 1p) begin // Check for valid period
+           period_in = 0.0;
+        end else begin
+           if (enable_debug_prints > 1) begin
+              $display("[%e: DEBUG(%m)] CAP Measured reference period = %e", $abstime, period_in);
+           end
+        end
+      end
+      t_edge_in_prev = t_edge_in; // Store previous edge time
+      t_edge_in = $abstime;     // Store current edge time
+
+      // --- Phase Calculation (Requires valid edges and period) ---
+      if (t_edge_indly > 0.0 && period_in > 0.0 && t_edge_indly > t_edge_in_prev) begin // Ensure delayed edge is after previous ref edge
+        measured_delay = t_edge_indly - t_edge_in_prev; // Delay relative to previous ref edge
+
+        // Normalize delay to be within one period (handle cases where t_edge_indly is near the next t_edge_in)
+        while (measured_delay < 0.0) begin
+           measured_delay = measured_delay + period_in;
+        end
+        while (measured_delay >= period_in) begin
+           measured_delay = measured_delay - period_in;
+        end
+
+        phase_shift = (measured_delay / period_in) * 360.0;
+
+        // Phase shift should now be in [0, 360) range, no further normalization needed here.
+
+        if (enable_debug_prints > 1) begin
+           $display("[%e: DEBUG(%m)] CAP Phase calculated. Delay=%e, Phase=%f deg", $abstime, measured_delay, phase_shift);
+        end
+
+        cycle_count = cycle_count + 1; // Increment cycle counter used for wait_cycles and potentially retune checks
+
+        //------------------------------------------------------------------
+        // Locked State Check & Retune Logic
+        // If locked, check if the current phase has drifted too far from the target.
+        //------------------------------------------------------------------
+        if (locked == 1) begin
+           // Calculate deviation of the current phase from the target phase
+           phase_deviation = phase_shift - target_phase_deg;
+           // Handle wrap-around for deviation calculation
+           if (phase_deviation > 180.0) begin
+              phase_deviation = phase_deviation - 360.0;
+           end
+           if (phase_deviation <= -180.0) begin
+              phase_deviation = phase_deviation + 360.0;
+           end
+           phase_deviation = abs(phase_deviation); // Absolute deviation from target
+
+           if (enable_debug_prints > 1) begin
+              $display("[%e: DEBUG(%m)] CAP Locked state check: current_phase=%f, target_phase=%f, deviation_from_target=%f",
+                       $abstime, phase_shift, target_phase_deg, phase_deviation);
+           end
+
+           // Check if deviation from target exceeds the retune tolerance
+           if (phase_deviation > phase_tolerance_retune_deg && check_for_retune) begin
+              phase_deviation_count = phase_deviation_count + 1;
+              if (enable_debug_prints) begin
+                 $display("[%e: DEBUG(%m)] CAP Phase deviation from target detected: count=%d, deviation=%f > retune_tolerance=%f",
+                          $abstime, phase_deviation_count, phase_deviation, phase_tolerance_retune_deg);
+              end
+              // If deviation persists for enough cycles, unlock for retuning
+              if (phase_deviation_count >= phase_deviation_cycles) begin
+                 if (enable_debug_prints) begin
+                    $display("[%e: DEBUG(%m)] CAP Consistent phase deviation from target detected. Unlocking for retuning.",
+                             $abstime);
+                 end
+                 locked                = 0;  // Unlock to resume tuning
+                 phase_deviation_count = 0;
+                 cycle_count           = 0;  // Reset wait counter
+                 history_index         = 0;  // Reset history
+                 history_filled        = 0;
+                 pulse_active          = 0;  // Ensure lock pulse is off
+                 // Keep current cap_val as starting point for retune
+                 // Clear history
+                 for (i = 0; i < history_size; i = i + 1) begin
+                    cap_history[i] = -1;
+                    phase_history[i] = 0.0;
+                 end
+              end
+           end else begin
+              // Deviation is within tolerance, reset the counter
+              phase_deviation_count = 0;
+           end
+        // End of locked state check
+        //------------------------------------------------------------------
+        // Tuning Decision Logic (Active Tuning)
+        // Only execute if not locked.
+        //------------------------------------------------------------------
+        end else begin // if (locked == 0)
+            phase_deviation_count = 0; // Ensure counter is 0 when tuning
+
+            // Wait for 'wait_cycles' after an adjustment before making a decision
+            if (cycle_count >= wait_cycles) begin
+              if (enable_debug_prints > 1) begin
+                 $display("[%e: DEBUG(%m)] CAP Entering tuning decision.", $abstime);
+              end
+              adjustment_made = 0;
+              oscillation_detected = 0;
+              // best_cap_code/best_phase_shift are only updated when locking occurs
+
+              // --- Update History Buffer ---
+              cap_history[history_index] = cap_val;
+              phase_history[history_index] = phase_shift;
+              prev_hist_index = history_index;
+              history_index = (history_index + 1) % history_size;
+              if (history_index == 0 && cap_history[history_size-1] != -1) begin // Check last entry written before wrap-around
+                 history_filled = 1;
+              end
+              if (enable_debug_prints > 1) begin
+                 $display("[%e: DEBUG(%m)] CAP History updated: Idx=%d, Cap=%d, Phase=%f, Filled=%d",
+                          $abstime, prev_hist_index, cap_history[prev_hist_index], phase_history[prev_hist_index], history_filled);
+              end
+
+              // --- Oscillation Detection ---
+              if (history_filled) begin
+                idx_N = (prev_hist_index + history_size) % history_size;
+                idx_N1 = (prev_hist_index + history_size - 1) % history_size;
+                idx_N2 = (prev_hist_index + history_size - 2) % history_size;
+                idx_N3 = (prev_hist_index + history_size - 3) % history_size;
+
+                // Check for A-B-A-B pattern in cap codes
+                if (cap_history[idx_N] == cap_history[idx_N2] && cap_history[idx_N1] == cap_history[idx_N3] && cap_history[idx_N] != cap_history[idx_N1]) begin
+                  oscillation_detected = 1;
+                  // Find which oscillating point is closer to the target phase
+                  phase_error = abs(phase_history[idx_N] - target_phase_deg); // Error for point N
+                  // Use best_phase_shift temporarily to store error for point N-1
+                  best_phase_shift = abs(phase_history[idx_N1] - target_phase_deg);
+
+                  if (phase_error <= best_phase_shift) begin // Point N is better or equal
+                     best_cap_code = cap_history[idx_N];
+                     best_phase_shift = phase_history[idx_N]; // Store actual phase of best point
+                  end else begin // Point N-1 is better
+                     best_cap_code = cap_history[idx_N1];
+                     best_phase_shift = phase_history[idx_N1]; // Store actual phase of best point
+                  end
+
+                  if (enable_debug_prints) begin
+                     $display("[%e: DEBUG(%m)] CAP Oscillation detected (%d vs %d). Locking to best cap_code=%d (Phase=%f, Err=%f)",
+                              $abstime, cap_history[idx_N], cap_history[idx_N1], best_cap_code, best_phase_shift, abs(best_phase_shift - target_phase_deg));
+                  end
+                  cap_val = best_cap_code; // Set the final cap code
+
+                  // === LOCKING ACTION (Oscillation) ===
+                  locked = 1;
+                  adjustment_made = 1; // Mark that we changed cap_val to lock
+                  if (pulse_active == 0) begin
+                     pulse_active = 1;
+                     pulse_start_time = $abstime;
+                     if (enable_debug_prints) begin
+                        $display("[%e: DEBUG(%m)] CAP LOCK (Osc). Triggering lock pulse.", $abstime);
+                     end
+                  end
+                end // End oscillation pattern check
+
+                // --- Stuck at Bounds Check ---
+                // Check if cap code has been stuck at min (0) or max (15) for the entire history buffer duration
+                if (!oscillation_detected && !locked) begin // Only check if not already locked/oscillating
+                   if ((cap_history[idx_N] == cap_history[idx_N1] && cap_history[idx_N1] == cap_history[idx_N2] && cap_history[idx_N2] == cap_history[idx_N3]) &&
+                       (cap_history[idx_N] == 0 || cap_history[idx_N] == 15) ) begin
+                     if (enable_debug_prints) begin
+                       $display("[%e: DEBUG(%m)] CAP Stuck at bound (%d) for %d cycles. Locking.", $abstime, cap_history[idx_N], history_size);
+                     end
+                     best_cap_code = cap_history[idx_N]; // Store the bound value
+                     best_phase_shift = phase_history[idx_N]; // Store the phase at the bound
+
+                     // === LOCKING ACTION (Bounds) ===
+                     locked = 1;
+                     adjustment_made = 0; // No adjustment made *this cycle*
+                     if (pulse_active == 0) begin
+                        pulse_active = 1;
+                        pulse_start_time = $abstime;
+                        if (enable_debug_prints) begin
+                           $display("[%e: DEBUG(%m)] CAP LOCK (Bound). Triggering lock pulse.", $abstime);
+                        end
+                     end
+                   end // End if stuck at bound condition met
+                end // End bounds check block
+              end // End history_filled checks
+
+              //--------------------------------------------------------------------------
+              // Capacitance Adjustment (if not locked by oscillation or bounds)
+              //--------------------------------------------------------------------------
+              if (locked == 0) begin
+                // Calculate signed phase error relative to target for adjustment direction
+                phase_error = phase_shift - target_phase_deg;
+                // Normalize error to approx [-180, 180]
+                if (phase_error > 180.0) begin
+                   phase_error = phase_error - 360.0;
+                end
+                if (phase_error <= -180.0) begin
+                   phase_error = phase_error + 360.0;
+                end
+
+                // Check against initial locking tolerance
+                if (abs(phase_error) <= phase_tolerance_deg) begin
+                  // Phase is within initial tolerance: Lock the tuning.
+                  if (enable_debug_prints) begin
+                     $display("[%e: DEBUG(%m)] CAP Phase in tolerance (%f <= %f). Locking cap at %d (Phase=%f).",
+                              $abstime, abs(phase_error), phase_tolerance_deg, cap_val, phase_shift);
+                  end
+                  best_cap_code = cap_val;         // Save current setting
+                  best_phase_shift = phase_shift; // Save the phase measured at lock time
+
+                  // === LOCKING ACTION (Tolerance) ===
+                  locked = 1;
+                  adjustment_made = 0; // No cap adjustment needed *this cycle* to lock
+                  if (pulse_active == 0) begin
+                     pulse_active = 1;
+                     pulse_start_time = $abstime;
+                     if (enable_debug_prints) begin
+                        $display("[%e: DEBUG(%m)] CAP LOCK (Tol). Triggering lock pulse.", $abstime);
+                     end
+                  end
+                // Adjust capacitance if outside initial tolerance
+                end else if (phase_error < -phase_tolerance_deg) begin // Phase low (too fast) -> increase delay -> increase cap
+                  if (cap_val < 15) begin
+                     if (enable_debug_prints) begin
+                        $display("[%e: DEBUG(%m)] CAP Phase low (Error=%f). Increasing cap %d->%d", $abstime, phase_error, cap_val, cap_val + 1);
+                     end
+                     cap_val = cap_val + 1;
+                     adjustment_made = 1;
+                  end else begin // Already at max capacitance
+                     if (enable_debug_prints) begin
+                        $display("[%e: DEBUG(%m)] CAP Phase low (Error=%f), but already at MAX cap (15).", $abstime, phase_error);
+                     end
+                     // No adjustment possible, will likely trigger bound lock check next time if history fills
+                  end
+                end else begin // phase_error > phase_tolerance_deg -> Phase high (too slow) -> decrease delay -> decrease cap
+                  if (cap_val > 0) begin
+                     if (enable_debug_prints) begin
+                        $display("[%e: DEBUG(%m)] CAP Phase high (Error=%f). Decreasing cap %d->%d", $abstime, phase_error, cap_val, cap_val - 1);
+                     end
+                     cap_val = cap_val - 1;
+                     adjustment_made = 1;
+                  end else begin // Already at min capacitance
+                     if (enable_debug_prints) begin
+                        $display("[%e: DEBUG(%m)] CAP Phase high (Error=%f), but already at MIN cap (0).", $abstime, phase_error);
+                     end
+                     // No adjustment possible, will likely trigger bound lock check next time if history fills
+                  end
+                end // End adjustment direction logic
+              end // End Capacitance Adjustment (!locked)
+
+              cycle_count = 0; // Reset cycle counter after decision/adjustment attempt
+            end // End Tuning Decision Logic (wait_cycles met)
+        end // End Tuning Decision Logic (locked == 0)
+      end // End if valid edges/period for phase calculation
+    end // End event: reference clock edge
+
+    //--------------------------------------------------------------------------
+    // Delayed Clock Edge Event
+    // Used for phase measurement. Updates the delayed-clock timing reference.
+    // This needs to happen regardless of lock state for continuous monitoring.
+    //--------------------------------------------------------------------------
+    @(cross(V(clk_delayed) - supply_voltage / 2.0, -1)) begin
+      t_edge_indly = $abstime; // Store the timestamp of the delayed clock edge
+      if (enable_debug_prints > 1) begin
+         $display("[%e: DEBUG(%m)] CAP clk_delayed edge detected at %e", $abstime, t_edge_indly);
+      end
+    end // End event: delayed clock edge
+
+    //--------------------------------------------------------------------------
+    // Pulse Termination Logic
+    // Deactivates the lock pulse after its specified width has elapsed.
+    //--------------------------------------------------------------------------
+    if (pulse_active == 1 && (($abstime - pulse_start_time) >= lock_pulse_width)) begin
+      pulse_active = 0; // End the pulse
+      if (enable_debug_prints > 1) begin
+         $display("[%e: DEBUG(%m)] CAP Lock pulse ended.", $abstime);
+      end
+    end
+
+  end // End analog begin
+endmodule
+
+\end{lstlisting}

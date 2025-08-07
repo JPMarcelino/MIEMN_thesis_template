@@ -1,0 +1,57 @@
+% --------- Abbreviations ----------
+\section*{List of Abbreviations}
+\begin{tabular}{p{0.18\linewidth} p{0.75\linewidth}}
+\textbf{Abbreviation} & \textbf{Definition} \\
+\hline
+AI     & Artificial Intelligence \\
+ML     & Machine Learning \\
+SerDes & Serializer/Deserializer \\
+IO     & Input/Output \\
+OTT    & Over-The-Top (services) \\
+PDE    & Programmable Delay Element \\
+DLL    & Delay-Locked Loop \\
+PI     & Phase Interpolator \\
+CSI    & Current-Starved Inverter \\
+DCD    & Duty-Cycle Distortion \\
+PVT    & Process, Voltage, Temperature \\
+DAC    & Digital-to-Analog Converter \\
+INL    & Integral Non-Linearity \\
+DNL    & Differential Non-Linearity \\
+LSB    & Least Significant Bit \\
+MSB    & Most Significant Bit \\
+RMS    & Root Mean Square \\
+ULVT   & Ultra-Low Voltage Threshold \\
+PLL    & Phase-Locked Loop \\
+MPG    & Multiphase Generator \\
+HF / MF / LF & High / Mid / Low Frequency (modes) \\
+UI     & Unit Interval \\
+% Add internal block names if used consistently:
+QuadGen & Four-phase generator block \\
+OctalGen & Eight-phase generator block \\
+% Add any other system-specific acronyms here
+\end{tabular}
+
+% --------- Notation ----------
+\section*{List of Notation}
+\begin{tabular}{p{0.18\linewidth} p{0.65\linewidth} p{0.15\linewidth}}
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Unit / Notes} \\
+\hline
+$\Delta V_{DD}$ & Local supply voltage deviation / bias shift for fine delay tuning & V \\
+$\tau$ & RC time constant & s \\
+$\tau_{\uparrow}, \tau_{\downarrow}$ & Rising / falling edge time constants & s \\
+$V_{\text{th}}$ & Threshold voltage (e.g., sampler decision threshold) & V \\
+$\phi_{\text{target}}$ & Target phase & degrees / radians \\
+$\varepsilon_{\phi}$ & Phase error & degrees / radians \\
+$\phi_{\text{tol,retune}}$ & Tolerance used for retuning phase & degrees / radians \\
+$\Delta t$ & Time offset or adjustment & s \\
+$T_{\text{REF}}$ & Reference clock period & s \\
+$\Delta C$ & Capacitance increment in capacitor bank & F \\
+$C_{\text{LSB}}$ & Least significant capacitance step & F \\
+$C_{\text{eff}}(b)$ or $C_e(b)$ & Effective node capacitance as function of control bit $b$ & F \\
+$SR_{\uparrow}, SR_{\downarrow}$ & Slew rates for rising / falling edges & V/s \\
+$UI$ & Unit interval (bit time) & s \\
+% If you define a figure of merit:
+$\mathrm{FoM_J}$ & Jitter figure of merit & (e.g., normalized per frequency) \\
+% PVT corner labels:
+SS, TT, FF, SF, FS & Process–Voltage–Temperature corner combinations & --- \\
+\end{tabular}

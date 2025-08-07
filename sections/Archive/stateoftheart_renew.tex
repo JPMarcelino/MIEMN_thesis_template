@@ -1,0 +1,83 @@
+\section{Multi‑Phase Generation Strategies}
+Multi‑phase clock generation is indispensable in modern SerDes transmitters and clock‑data‑recovery (CDR) loops.  At symbol rates above 20,Gb/s the clock
+network must provide sub‑100,fs jitter while dissipating only a few milliwatts per lane.  Three architectural families dominate:
+
+\begin{enumerate}[label=\arabic*)]
+\item Delay‑locked–loop (DLL) / voltage‑controlled delay line (VCDL) chains,
+\item Injection‑locked ring‑oscillator (ILRO) and IL‑PLL topologies,
+\item Phase‑interpolator (PI) assisted hybrids.
+\end{enumerate}
+Each class offers distinct trade‑offs among tune‑range, phase accuracy, jitter filtering and power.  Table~\ref{tab:mp_survey} benchmarks representative designs.
+
+\subsection{DLL / VCDL Chains}
+Classical DLLs cascade $N$ voltage- or digitally‑controlled delay cells whose total delay is phase‑locked to one input period, thereby providing $N$ equi‑spaced taps\cite{Wang2021JSSC}.  In $\le$7‑nm nodes the delay resolution is limited by device mismatch; sub‑ps steps require heavy segmentation, inflating parasitics and static power.  Advanced DLLs therefore embed auxiliary calibration loops or injection pulses to mitigate jitter accumulation.  A 20,GHz eight‑phase DLL with periodic injection‑locked buffers trimmed static spacing error to $\pm$0.5,ps across PVT while holding jitter to 84,fs\cite{Song2019CICC}.  More recently, a dual‑delay‑line DLL in 5,nm FinFET achieves 25,GHz operation using coarse/fine lines and background code search, limiting skew to 0.38,ps\cite{Chen2020VLSIC}.
+
+\subsection{Injection‑Locked Ring Oscillators}
+An $N$‑stage ring oscillator inherently yields $N$ phase outputs but suffers higher phase noise than LC tanks.  Injection of a clean multi‑phase reference periodically forces the ring to lock, suppressing jitter while preserving compact area\cite{Wang2021ISSCC}.  A 7–8,GHz ILRO with quadrature DLL drive achieved 56,fs jitter and $<$2.5 mW core power in 65,nm\cite{Wang2021ISSCC}.  Extending this idea, a dual‑feedback ILRO couples a wideband DLL for frequency lock and a phase‑aligned injection path for noise suppression, realizing 8‑phase outputs from 8–28,GHz with 38,fs jitter in 28,nm\cite{Tian2025ISSCC}.
+
+\paragraph{Fractional‑$N$ Multi‑Point Injection} Meng \textit{et al.}\ propose two‑point programmable injection per stage to attain fractional phase resolution without a $\Delta\Sigma$ modulator.  Their 16‑phase ILRO reaches an effective resolution of $f_{\mathrm{REF}}/(16\times8)$ and preserves single‑point phase‑noise performance\cite{Meng2024FractionalILRO}.
+
+\subsection{Phase‑Interpolator Assisted Generators}
+PIs synthesize intermediate phases from a reduced phase set.  A 9‑bit integrating‑mode PI in 5,nm spans 9–14,GHz with 2 LSB peak‑to‑peak DNL at 0.43 mW/GHz\cite{Mishra2022ISSCC}.  Mohapatra \textit{et al.}\ demonstrated an 8‑bit ramp‑based PI with 0.8 LSB DNL and 8 ps resolution while dissipating 0.18 mW/GHz\cite{Mohapatra2024ISSCC}.  Such fine‑resolution PIs, appended to ILRO or DLL cores, enable sub‑ps phase trimming and duty‑cycle correction with negligible jitter overhead.
+
+\begin{table}[t]
+\centering
+\caption{Recent TX‑Side Multi‑Phase Clock Generators (2018–2025)}
+\label{tab:mp_survey}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Work & Topology & $f_{\text{out}}$ (GHz) & Phases & Jitter (fs$_\text{rms}$) \\
+\midrule
+Chen \emph{et al.},'18\cite{Chen2018ISSCC} & ILRO & 4–16 & 4+PI & 150 \\
+Song \emph{et al.},'19\cite{Song2019CICC}  & DLL+IL & 2–20 & 8 & 300 \\
+Wang \emph{et al.},'21\cite{Wang2021ISSCC} & DLL+ILRO & 7–8 & 8 & 56 \\
+Chen \emph{et al.},'20\cite{Chen2020VLSIC} & DLL & 4–18 & 8 & 120 \\
+Mishra \emph{et al.},'22\cite{Mishra2022ISSCC} & PI & 9–14 & – & – \\
+Mohapatra \emph{et al.},'24\cite{Mohapatra2024ISSCC} & PI & 6–12 & – & – \\
+Tian \emph{et al.},'25\cite{Tian2025ISSCC} & DLL+ILRO & 8–28 & 8 & 38 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% \subsection{Current-starving}
+% This technique relies on the principle that the delay of a digital cell is proportional to the current flowing through it. By reducing the current, the delay can be increased, and vice versa. The inverter is the most common digital block used in this technique due to its compact size, simple delay model, and low power consumption~\cite{maymandi2003digitally}.
+% In this technique, PMOS/NMOS transistors are commonly stacked in the pull-up/pull-down paths. The gate voltage of these transistors can then be adjusted to regulate current~\cite{maymandi2005monotonic,yao2011}. This can either be achieved by adjusting the gate voltage of one (or multiple) transistor(s) in small steps, or by having multiple transistors in parallel whose gate voltages are either connected to a high or low voltage. Both methods allow for programmable current control, though the former requires a DAC to translate input digital bits into an analog gate voltage.
+
+% Figure~\ref{fig:csi_delay_eg} illustrates a current-starved delay element, where the delay is adjusted by switching transistors M1 to M4 on and off. The delay is determined by the ratio of the transistors' on-resistance to the output node capacitance.
+
+% In this configuration, the NMOS pull-down current is controlled by a digital input, which toggles the transistors, modulating the current through the branch. This, in turn, influences the charging and discharging rate of the output voltage. A stronger NMOS pull-down current results in a shorter falling delay, whereas a weaker pull-down current increases the falling edge delay.
+
+% Current-starved delay control is analog in nature. It offers continuous tunability, easily capable of <20~fs adjustments if the bias voltage is sufficiently finely stepped. However, the relationship between control voltage and delay is nonlinear (due to MOS I-V curves)~\cite{Batur2015high}. The effective resolution of the delay element is limited by the achievable gate voltage step size or the minimum transistor size, depending on the implementation. Moreover, NMOS and PMOS transistors have different I-V characteristics, leading to asymmetrical rise and fall times~\cite{Heck2015optimization}. This can be mitigated by appropriate tuning of the bias voltage, but adds complexity to the design. One way to circumvent this issue is to keep the voltage range small, ensuring more linear behavior at the cost of reduced tuning range. More complex solutions have been proposed to address nonlinearity~\cite{Seraj2015new,Gharib2008novel}. However, such designs are usually unsuitable for high-speed designs, frequently requiring looping the clock signals, adding complexity and timing constraints.
+
+
+% \begin{table*}[t]
+%  \caption{Representative multi-phase clock generators and delay elements (2018-2025).}\label{tab:sota_summary_corrected}
+%  \footnotesize
+%  \begin{tabular}{@{}l>{\centering}p{1.7cm}>{\centering}p{1.3cm}c>{\centering}p{2.2cm}>{\centering}p{1.2cm}>{\centering}p{1.2cm}>{\centering\arraybackslash}p{1.2cm}@{}}
+%   \toprule
+%   Reference & Technology & Freq. (GHz) & Phases & Resolution & Jitter (fs) & Power (mW) & Area (mm$^2$) \\
+%   \midrule
+%   Chen \textit{et~al.} 2018\cite{Chen2018ISSCC} & 7\,nm FinFET & 4--16 & 8 (+PI) & $\approx 0.49$\,ps\newline(7-bit PI\newline@16GHz) & 80\textsuperscript{\textit{a}} & 22.4\textsuperscript{\textit{b}} & 0.105 \\ 
+%   Song \textit{et~al.} 2019\cite{Song2019CICC} & 16\,nm FinFET & 2--20 & 8 & $\approx 0.78$\,ps\newline(6-bit PI\newline@20GHz) & ---\textsuperscript{\textit{c}} & 43\textsuperscript{\textit{d}} & 0.0036 \\
+%   Chen \textit{et~al.} 2020\cite{Chen2020VLSIC} & 5\,nm FinFET & 4--18 & 4 & 6-bit QEC\newline(0.25$^{\circ}$ error) & 148\textsuperscript{\textit{k}} & 21\textsuperscript{\textit{l}} & 0.0017 \\
+%   Wang \textit{et~al.} 2021\cite{Wang2021JSSC} & 65\,nm CMOS & 5--8 & 8 & $\approx 0.98$\,ps\newline(7-bit PI\newline@8GHz) & 58.8 & 15.6\textsuperscript{\textit{f}} & 0.021\textsuperscript{\textit{f}} \\
+%   Lu \textit{et~al.} 2022\cite{Lu2022JSSC}\textsuperscript{\textit{i}} & 3\,nm FinFET & 12.6--14.5 & --- (PLL) & --- (PLL) & 56\textsuperscript{\textit{j}} & 18.6 & $\approx0.045$ \\
+%   Mishra \textit{et~al.} 2022\cite{Mishra2022ISSCC} & 5\,nm FinFET & 9--14 & --- (PI) & 9\,bit & 71 & 6 & 0.006 \\
+%   Mohapatra \textit{et~al.} 2024\cite{Mohapatra2024ISSCC} & 65\,nm CMOS & 6--12\textsuperscript{\textit{g}} & 4/2 (PI) & 8\,bit & 68 & 2.2 & 0.025 \\
+%   Tian \textit{et~al.} 2025\cite{Tian2025ISSCC} & 28\,nm CMOS & 8--28 & 8 & $3^{\circ}$ phase error\newline($\approx 0.30$\,ps\newline@28GHz) & 38\textsuperscript{\textit{h}} & 26--90 & 0.02 \\
+%   \bottomrule
+%  \end{tabular}
+
+% \textsuperscript{\textit{a}}\footnotesize{Full clock chain (incl. LCVCO, ILRO, and D/X PIs) jitter @16GHz (100kHz-1GHz). ILRO+PI add 5fs.}
+%  \newline \textsuperscript{\textit{b}}\footnotesize{ILRO + one PI power @16GHz.}
+%  \newline \textsuperscript{\textit{c}}\footnotesize{RMS jitter for the clock generator part not explicitly reported.}
+%  \newline \textsuperscript{\textit{d}}\footnotesize{Total power for PLL + PIs at 20GHz.}
+%  \newline \textsuperscript{\textit{f}}\footnotesize{For QDLL+MPILOSC (the multi-phase clock generator itself).}
+%  \newline \textsuperscript{\textit{g}}\footnotesize{PI generates 4-phase outputs up to 6GHz and 2-phase outputs up to 12GHz.}
+%  \newline \textsuperscript{\textit{h}}\footnotesize{Integrated from 1kHz-1GHz, including signal source noise.}
+%  \newline \textsuperscript{\textit{i}}\footnotesize{This is a PLL, not specifically a multi-phase generator for interpolation.}
+%  \newline \textsuperscript{\textit{j}}\footnotesize{Integrated from 1kHz-100MHz @13.28GHz.}
+%  \newline \textsuperscript{\textit{k}}\footnotesize{Integrated from 100kHz--1GHz @18GHz. Long-term jitter is 154\,fs @14GHz.}
+%  \newline \textsuperscript{\textit{l}}\footnotesize{QCG only (APPF, QEC, PED). Full clock path consumes 37mW.}
+
+% \end{table*}

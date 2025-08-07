@@ -1,0 +1,41 @@
+\section{Materials and Methods}\label{sec:mat_methods}
+
+\subsection{Process Technology and Operating Conditions}
+The multiphase clock generator is implemented in TSMC's \SI{7}{\nano\metre} and subsequently \SI{3}{\nano\metre} FinFET CMOS technology.
+All circuits operate from a single nominal supply of 0.88V.
+Electrical and timing performance is verified across the full \gls{pvt} space, spanning the \texttt{SS}, \texttt{TT},\texttt{FS}, \texttt{SF} and \texttt{FF} process corners at \SI{-40}{\celsius}, \SI{25}{\celsius} and \SI{125}{\celsius}. 
+Noise simulations were always run using worst-case MOS models.
+
+\subsection{Target Specifications}
+The design goals are reproduced here for completeness and constitute the quantitative figures of merit guiding the methodology:
+\begin{itemize}
+  \item Eight equi-spaced phases (0°--315° in 45° steps).
+  \item Phase inaccuracy of approximately \ang{1} at \SI{22.5}{\giga\hertz}.
+  \item Integrated random jitter $\sigma_\mathrm{rms}<\SI{25}{\femto\second}$ in the \SI{10}{\kilo\hertz}\--\SI{11.25}{\giga\hertz} integration band.
+  \item Duty-cycle $50\pm5\,\%$.
+  \item Peak-to-peak swing $>80\,\%\,V_\mathrm{DD}$ on internal nodes and $>90\,\%\,V_\mathrm{DD}$ at the phase outputs.
+\end{itemize}
+
+\subsection{Digital Calibration Loop}\label{sec:methods_digital_loop}
+Phase alignment is maintained by a synchronous Verilog-A control loop that executes on every rising edge of the output clocks (\ref{sec:RTL_tuning}). 
+The detector converts the arrival-time difference $\Delta t$ into a phase error 
+\[
+\varepsilon_\phi = 360^{\circ}\,\frac{\Delta t}{T_\mathrm{REF}} - \phi_\mathrm{target},
+\]
+which drives a proportional step-search adjusting the \texttt{cap\_code} of the active delay cell. 
+The circuit-agnostic Verilog-A implementation used during pre-layout verification correctly made the outputs converge to the target phases over PVT at different operating frequencies.
+
+\subsection{Simulation Framework}
+All electrical simulations are carried out in \textsc{Cadence} Virtuoso Studio IC version 23.1 \cite{CadenceVirtuosoIC231ISR13} using the transistor models delivered by the foundry. The program was accessed through AMD server infrastructure, which provided the necessary computational resources for the simulations. The access to the server was facilitated by OpenText Exceed TurboX \cite{RedHatExceedTurboX}, a cloud-based solution that enables remote access to virtual desktops and applications.
+
+Simulations comprised transient, periodic steady-state (PSS), periodic noise (Pnoise) and time-domain jitter (Tnoise).
+
+Extractions with \textsc{Paragon-X}~PGX \cite{AnsysParagonX2025} were performed on post-layout designs to generate an RLC parasitics netlist and generate more accurate simulations.
+
+PVT corner simulations are partially automated by \textsc{OCEAN} and Python scripts.
+
+Timing and jitter are evaluated with the built-in \textsc{Spectre} \texttt{pnoise} / \texttt{tnoise} utilities. 
+
+
+\subsection{Data Post-Processing}
+Simulation logs are exported through the cadence interface. Data analysis and plotting were performed using OriginPro (OriginLab Corporation, Version 2024b) \cite{OriginLab2025}
