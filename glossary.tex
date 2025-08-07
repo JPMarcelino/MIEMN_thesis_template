@@ -1,1 +1,94 @@
-[Glossary content]
+% ====================================================================
+% GLOSSARY & NOTATION
+% ====================================================================
+% This file defines all the acronyms and notation used in the thesis.
+% It uses the 'glossaries' package.
+%
+% HOW TO USE:
+% 1. Add your acronyms and notations in the sections below.
+% 2. To use an entry in your text, use the \gls{label} command.
+%    For example, to use the 'FPGA' acronym, write \gls{fpga}.
+%    The first time you use it, it will print the full text and the
+%    abbreviation in parentheses, e.g., "Field-Programmable Gate Array (FPGA)".
+%    Subsequent uses will only print the abbreviation, e.g., "FPGA".
+%
+% For more details on the 'glossaries' package, see its documentation.
+% ====================================================================
+
+
+% -------------------------------------------------------------------
+% ACRONYMS
+% -------------------------------------------------------------------
+% Define all your acronyms here.
+%
+% The 'type=acronym' key is important because we have defined a
+% separate glossary for acronyms in thesis.tex.
+%
+% Format:
+% \newacronym[type=acronym]{label}{abbreviation}{full text}
+%
+% - 'label' is a unique identifier for the entry (e.g., 'fpga').
+% - 'abbreviation' is the shortened form (e.g., 'FPGA').
+% - 'full text' is the complete name (e.g., 'Field-Programmable Gate Array').
+% -------------------------------------------------------------------
+
+\newacronym[type=acronym]{fct}{FCT}{Faculdade de Ciências e Tecnologia}
+\newacronym[type=acronym]{unl}{UNL}{Universidade Nova de Lisboa}
+\newacronym[type=acronym]{asic}{ASIC}{Application-Specific Integrated Circuit}
+\newacronym[type=acronym]{fpga}{FPGA}{Field-Programmable Gate Array}
+\newacronym[type=acronym]{hdl}{HDL}{Hardware Description Language}
+
+
+% -------------------------------------------------------------------
+% NOTATION
+% -------------------------------------------------------------------
+% Define all your mathematical and scientific notations here.
+%
+% The 'type=notation' key is important because we have defined a
+% separate glossary for notation in thesis.tex.
+%
+% Format:
+% \newglossaryentry{label}{
+%     type=notation,
+%     name={symbol},
+%     description={meaning}
+% }
+%
+% - 'label' is a unique identifier (e.g., 'speedoflight').
+% - 'name' is the symbol as it should appear in the text (e.g., \(c\)).
+% - 'description' is the explanation of the symbol.
+% -------------------------------------------------------------------
+
+\newglossaryentry{speedoflight}{
+    type=notation,
+    name={\(c\)},
+    description={The speed of light in a vacuum, approximately \(3.00 \times 10^8\) m/s.}
+}
+
+\newglossaryentry{planck}{
+    type=notation,
+    name={\(h\)},
+    description={Planck's constant, relating a photon's energy to its frequency.}
+}
+
+\newglossaryentry{gravity}{
+    type=notation,
+    name={\(G\)},
+    description={The gravitational constant, an empirical physical constant involved in the calculation of gravitational effects.}
+}
+
+% ====================================================================
+% PRINTING THE GLOSSARIES
+% ====================================================================
+% These commands generate the lists of acronyms and notation in your
+% document. They are placed here for convenience, but they are
+% actually called from the main thesis.tex file.
+%
+% The 'style' key uses the custom tabular styles defined in thesis.tex.
+% ====================================================================
+
+\printglossary[type=acronym, style=tabularabbr, title={List of Abbreviations}]
+\cleardoublepage
+
+\printglossary[type=notation, style=tabularnotation, title={List of Notation}]
+\cleardoublepage
