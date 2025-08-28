@@ -1,40 +1,47 @@
+% ---------------------------------------------------------------------
+% MIEMN Thesis Template
+% This document is pre-configured to comply with the FCT NOVA rules:
+%   - Times New Roman, 11 pt font
+%   - 1.25 line spacing
+%   - 2 cm margins on all sides
+%   - No blank pages between sections
+% Fill in the placeholders and remove example text as you draft your thesis.
+% ---------------------------------------------------------------------
 \documentclass[11pt, a4paper]{report}
 
 % =====================================================================
 % PACKAGES
 % =====================================================================
-\usepackage[a4paper, margin=2.5cm]{geometry} % Adjust page margins
-\usepackage{times} % Times New Roman font
-\usepackage{setspace} % For line spacing
-\usepackage{fancyhdr} % For custom headers/footers
-\usepackage{titlesec} % For custom headings
-\usepackage{graphicx} % For including images
-\usepackage{caption} % For figure/table captions
-\usepackage{float} % For precise placement of figures/tables
-\usepackage{tocbibind} % Include bibliography in the Table of Contents
-\usepackage{amsmath, amssymb} % For mathematical symbols
-\usepackage{lipsum} % For placeholder text (remove in final document)
-\usepackage{appendix} % For appendices
-\usepackage{xcolor} % For custom colors
-\usepackage{wallpaper} % For background images
-\usepackage[numbers]{natbib}
-\usepackage{microtype} % Improves spacing and typography
-\usepackage{ragged2e} % Better text alignment
-\usepackage{bookmark} % Added to resolve the warning
-\usepackage{siunitx}
-\usepackage{booktabs}
-\usepackage{textcomp}
-\usepackage{gensymb}
-\usepackage{subcaption}   % modern subfigures
-\usepackage{tabularx,threeparttable,makecell}
-\usepackage{enumitem} % For custom lists
-\usepackage{hyperref} % For hyperlinks in the document
-\usepackage{verbatim} % For verbatim text (e.g., code snippets)
-\usepackage{listings} % For code listings
-\usepackage{xcolor} % For code syntax highlighting
-\usepackage{tikz} % For drawing diagrams
-\usepackage{wallpaper} % For background images
-\usepackage[xindy]{glossaries}
+\usepackage[a4paper, margin=2cm]{geometry} % A4 layout with 2 cm margins on all sides
+\usepackage{times} % Use Times New Roman font for all text
+\usepackage{setspace} % Allows custom line spacing
+\usepackage{fancyhdr} % Control over headers and footers
+\usepackage{titlesec} % Custom chapter and section headings
+\usepackage{graphicx} % Insert figures and images
+\usepackage{caption} % Tweak figure and table captions
+\usepackage{float} % Enforce precise placement of figures/tables
+\usepackage{tocbibind} % Add bibliography to the table of contents
+\usepackage{amsmath, amssymb} % Math environments and symbols
+\usepackage{lipsum} % Placeholder text; remove in final document
+\usepackage{appendix} % Support for appendices
+\usepackage{xcolor} % Enable colored text and highlighted code
+\usepackage{wallpaper} % Optionally place background images
+\usepackage[numbers]{natbib} % Numeric citation style
+\usepackage{microtype} % Subtle typographic improvements
+\usepackage{ragged2e} % Enhanced text alignment commands
+\usepackage{bookmark} % Improve PDF bookmarks
+\usepackage{siunitx} % Consistent typesetting of units
+\usepackage{booktabs} % Professional quality tables
+\usepackage{textcomp} % Additional text symbols
+\usepackage{gensymb} % Generic scientific symbols (e.g., degree)
+\usepackage{subcaption}   % Modern subfigure support
+\usepackage{tabularx,threeparttable,makecell} % Flexible tables with wrapped text
+\usepackage{enumitem} % Customizable itemize/enumerate lists
+\usepackage{hyperref} % Hyperlinks within the PDF
+\usepackage{verbatim} % Verbatim text (useful for code listings)
+\usepackage{listings} % Nicely formatted code blocks
+\usepackage{tikz} % Create vector graphics and diagrams
+\usepackage[xindy]{glossaries} % Manage glossaries and lists of abbreviations
 
 
 % Define two glossaries: one for acronyms, one for notation
@@ -69,13 +76,13 @@
 % =====================================================================
 % FORMATTING & SETUP
 % =====================================================================
-\onehalfspacing % Set line spacing to 1.5 as per regulations
+\setstretch{1.25} % 1.25 line spacing as required by FCT NOVA rules
 
 \setcounter{secnumdepth}{5}
 \setcounter{tocdepth}{5}
 \captionsetup[figure]{font=small}
 \setlength{\emergencystretch}{3em}
-\bibliographystyle{unsrtnat}
+\bibliographystyle{unsrtnat} % Replace with an American or IOP style if required
 \tolerance=1000
 \emergencystretch=\maxdimen%
 \hyphenpenalty=10000
@@ -142,7 +149,7 @@
     \thispagestyle{empty}
     \vspace*{0.1\textheight} % Adjust spacing as needed
     \importsection{copyright} % Create a "copyright.tex" file with the required text
-    \cleardoublepage
+    \clearpage % Avoid blank page after copyright
 }
 
 % =====================================================================
@@ -161,11 +168,11 @@
 % Replaced "Summary" with required Portuguese and English abstracts
 \chapter*{Resumo}
 \importsection{resumo} % NOTE: Create a "resumo.tex" file for your Portuguese abstract
-\cleardoublepage % Ensure next section starts on an odd page
+\clearpage % Start the next section on a new page without blank pages
 
 \chapter*{Abstract}
 \importsection{abstract} % NOTE: Create an "abstract.tex" file for your English abstract
-\cleardoublepage % Ensure next section starts on an odd page
+\clearpage % Start the next section on a new page without blank pages
 
 \chapter*{Acknowledgements}
 \importsection{acknowledgements}
@@ -176,13 +183,13 @@
 
 \addtocontents{toc}{\protect\setcounter{tocdepth}{-1}}
 \tableofcontents
-\cleardoublepage
+\clearpage % Separate sections without blank pages
 
 \listoffigures
-\cleardoublepage
+\clearpage % Separate sections without blank pages
 
 \listoftables
-\cleardoublepage
+\clearpage % Separate sections without blank pages
 \addtocontents{toc}{\protect\setcounter{tocdepth}{5}}
 
 
@@ -192,32 +199,32 @@
 
 \chapter{Introduction}
 \importsection{introduction}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 
 \chapter{State of the Art}
 \importsection{stateoftheart}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 
 \chapter{Materials and Methods}
 \importsection{methods}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 
 \chapter{Results and Discussion}
 \importsection{results_patched}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 
 \chapter{Conclusions and Future Perspectives}
 \importsection{conclusions}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 
 \bibliography{bibliography}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 
 \appendix
 \chapter{Annexes}
 \importsection{appendix_a}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 \importsection{appendix_b}
-\cleardoublepage % CHANGED
+\clearpage % Start new chapter without blank page
 
 \end{document}
