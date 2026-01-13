@@ -1,0 +1,79 @@
+# LaTeX auxiliary and log files
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.lol
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# Intermediate documents
+*.dvi
+*.pdfsync
+*.ps
+*.eps
+
+# Generated directories
+*_minted*
+_texmf/
+
+# Editor swap/backup files
+*.swp
+*.swo
+*~
+
+# Latexmk auxiliary files
+latex.out/
+latexmk/
+
+# TeXShop and TeXworks
+texshop/
+texworks/
+
+# Miscellaneous
+texput.log
+*.asy
+*.glg
+*.glo
+*.gls
+*.ist
+*.acn
+*.acr
+*.alg
+*.glsdefs
+
+# Build artifacts
+build/
+output/
+
+# Thesis-specific generated files
+*.acn
+*.alg
+*.glo
+*.gls
+*.glsdefs
+*.glg
+*.nlg
+*.ntn
+*.not
+*.xdy
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# VS Code settings (optional - remove if you want to track settings)
+.vscode/

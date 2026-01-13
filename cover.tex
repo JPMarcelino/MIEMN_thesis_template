@@ -1,0 +1,88 @@
+\documentclass[a4paper]{article}
+\usepackage[margin=0mm]{geometry}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usepackage{xcolor}
+\usepackage{helvet}
+\usepackage{setspace}
+\renewcommand*{\familydefault}{\sfdefault}
+\setlength{\parindent}{0pt}
+\setstretch{1.0}
+
+% --- Editable metadata ------------------------------------------------------
+\newcommand*{\coverTitle}{COVER TITLE}
+\newcommand*{\coverAuthor}{YOUR NAME HERE}
+\newcommand*{\coverAuthorDegree}{BSc in Micro and Nanotechnology Engineering}
+\newcommand*{\coverProgram}{Master in study in Micro and Nanotechnology Engineering}
+\newcommand*{\coverUniversity}{NOVA University Lisbon}
+\newcommand*{\coverDate}{September, 2025}
+\newcommand*{\coverSupervisors}{YOUR SUPERVISORS)}
+\newcommand*{\coverCommittee}{President: Name of President\\Examiner: Name of Examiner\\Member: Name of Member}
+\newcommand*{\coverSchool}{NOVA School of Science and Technology}
+\newcommand*{\coverDepartment}{DEPARTMENT OF MATERIALS SCIENCE}
+% ---------------------------------------------------------------------------
+
+\definecolor{coverwhite}{RGB}{255,255,255}
+
+\begin{document}
+\thispagestyle{empty}\null
+
+\begin{tikzpicture}[remember picture,overlay]
+  % background artwork from NOVAthesis template (full bleed)
+  \node[anchor=center] at (current page.center)
+    {\includegraphics[width=\paperwidth]{cover-assets/nova-fct-cover-blue-front}};
+
+  % top bar elements
+  \node[anchor=north west] at ($(current page.north west)+(16mm,-8mm)$)
+    {\includegraphics[width=24mm]{cover-assets/nova-insignia-negative}};
+  \node[anchor=north] at ($(current page.north west)+(75mm,-8mm)$)
+    {\includegraphics[width=48mm]{cover-assets/nova-fct-logo-negative-en}};
+  \node[anchor=north east,text=coverwhite,font=\sffamily\bfseries\footnotesize] at ($(current page.north east)+( -20mm,-20mm)$)
+    {\coverDepartment};
+
+  % author block
+  \node[anchor=north west,text=coverwhite,font=\sffamily\bfseries,align=left,text width=20cm]
+    at ($(current page.north west)+(40mm,-90mm)$) {\fontsize{18pt}{20pt}\selectfont\MakeUppercase{\coverAuthor}\\[5mm]
+      {\normalfont\Large\coverAuthorDegree}};
+
+  % title block
+  \node[anchor=west,text=coverwhite,font=\sffamily\bfseries,align=left,text width=13cm]
+    at ($(current page.north west)+(40mm,-148mm)$)
+      {\fontsize{24pt}{26pt}\selectfont\MakeUppercase{\coverTitle}};
+
+  % bottom block
+  \node[anchor=south west,text=coverwhite,font=\sffamily,align=left,text width=15cm]
+    at ($(current page.south west)+(40mm,20mm)$){\MakeUppercase{\coverProgram}\\[6mm]
+      {\large\coverUniversity}\\[3mm]
+      {\large\coverDate}};
+\end{tikzpicture}
+
+% \clearpage
+% \thispagestyle{empty}\null
+
+% \begin{tikzpicture}[remember picture,overlay]
+%   % top logos and divider on the inner cover
+%   \node[anchor=north west] at ($(current page.north west)+(16mm,-8mm)$)
+%     {\includegraphics[width=22mm]{cover-assets/nova-insignia}};
+%   \node[anchor=north west] at ($(current page.north west)+(45mm,-8mm)$)
+%     {\includegraphics[width=42mm]{cover-assets/nova-fct-logo-en}};
+%   \draw[line width=0.6pt,black] ($(current page.north west)+(16mm,-35mm)$) -- ($(current page.north east)+(-16mm,-35mm)$);
+%   \node[anchor=north east,text=black,font=\sffamily\bfseries\footnotesize,align=right] at ($(current page.north east)+( -30mm,-20mm)$)
+%     {\coverDepartment};
+% \end{tikzpicture}
+
+% \vspace*{5.5cm}
+% \hspace*{1.8cm}\begin{minipage}{0.7\textwidth}
+%   {\Large\bfseries \coverTitle}\\[20mm]
+%   {\large \bfseries\coverAuthor}\\[6mm]
+%   {\large \coverAuthorDegree}\\[10mm]
+%   {\large \coverSupervisors}\\[6mm]
+%   {\large\bfseries Examining Committee}\\[-1mm]
+%   {\large \coverCommittee}\\[10mm]
+%   {\large \coverProgram}\\[3mm]
+%   {\large \coverUniversity}\\[3mm]
+%   {\large \coverDate}
+% \end{minipage}
+
+\end{document}
