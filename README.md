@@ -41,12 +41,10 @@ before you submit.
 
 ## The pages
 
-Every page below is produced by the template.
-
 <p align="center">
-  <img src="docs/assets/pages-overview.png" alt="All 29 pages of the compiled thesis" width="100%">
+  <img src="docs/assets/pages-overview.png" alt="All 30 pages of the compiled thesis" width="100%">
   <br>
-  <sub>The 29 pages of the sample document, built by <code>make</code>.</sub>
+  <sub>The 30 pages of the sample document, built by <code>make</code>.</sub>
 </p>
 
 <table align="center">
