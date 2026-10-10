@@ -217,8 +217,8 @@
 \frontchapter{Acknowledgements}
 \importsection{acknowledgements}
 
-% Acronyms + notation. glossary.tex prints both lists and adds them to the ToC.
-\cleardoublepage
+% Acronyms + notation. glossary.tex prints both lists (each starts its own
+% page) and adds them to the table of contents.
 \input{glossary}
 
 \cleardoublepage
@@ -233,6 +233,10 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{\listtablename}
 \listoftables
+
+% Flush the last roman-numbered page BEFORE switching to arabic, otherwise
+% the List of Tables entry would be recorded with the arabic page number.
+\cleardoublepage
 
 % ---- Main content (arabic numerals, starts at page 1) ----------------
 \pagenumbering{arabic}
