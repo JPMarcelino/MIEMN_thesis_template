@@ -56,7 +56,6 @@
 % ---- Headings & contents ---------------------------------------------
 \usepackage{titlesec}
 \usepackage{lipsum}                % placeholder text — remove before submission
-\usepackage[lot, lof]{tocbibind}   % LoF/LoT/bibliography in the ToC
 
 % ---- References -------------------------------------------------------
 % Numeric IEEE-style bibliography (rule 1e allows American/IOP styles).
@@ -226,9 +225,13 @@
 \tableofcontents
 
 \cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{\listfigurename}
 \listoffigures
 
 \cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{\listtablename}
 \listoftables
 
 % ---- Main content (arabic numerals, starts at page 1) ----------------
@@ -257,6 +260,8 @@
 
 % ---- References ------------------------------------------------------
 \cleardoublepage
+\phantomsection
+\addcontentsline{toc}{chapter}{\bibname}
 {\fontsize{9pt}{11pt}\selectfont
 \setlength{\bibsep}{0pt}
 \bibliography{bibliography}

@@ -6,16 +6,23 @@
 #
 # Requires a LaTeX distribution with pdflatex, bibtex and makeglossaries
 # (xindy). See README.md for installation notes.
-set -euo pipefail
+set -uo pipefail
 cd "$(dirname "$0")"
 
 LATEX="pdflatex -interaction=nonstopmode -file-line-error"
+status=0
 
-echo "==> Cover (cover.tex)"
-$LATEX cover.tex >/dev/null
+run() {
+  local label="$1"; shift
+  echo "==> ${label}"
+  if ! "$@"; then
+    echo "    (pdflatex returned a non-zero status)"
+    status=1
+  fi
+}
 
-echo "==> Thesis, pass 1"
-$LATEX thesis.tex >/dev/null
+run "Cover (cover.tex)" $LATEX cover.tex
+run "Thesis, pass 1" $LATEX thesis.tex
 
 echo "==> Glossary (makeglossaries)"
 if command -v makeglossaries >/dev/null 2>&1; then
@@ -31,18 +38,19 @@ else
   echo "    bibtex not found — bibliography will be empty"
 fi
 
-echo "==> Thesis, pass 2"
-$LATEX thesis.tex >/dev/null
-echo "==> Thesis, pass 3"
-$LATEX thesis.tex >/dev/null
+run "Thesis, pass 2" $LATEX thesis.tex
+run "Thesis, pass 3" $LATEX thesis.tex
 
-# Fail loudly if LaTeX logged an error, even though nonstopmode continued.
-if grep -qE '^! ' thesis.log 2>/dev/null; then
-  echo
+echo
+if grep -nE '^! |LaTeX Error:|^Error:' thesis.log >/dev/null 2>&1; then
   echo "Build finished with errors — see thesis.log:" >&2
-  grep -nE '^! ' thesis.log >&2 || true
+  grep -nE '^! |LaTeX Error:|^Error:' thesis.log >&2 || true
+  status=1
+fi
+
+if [ "$status" -ne 0 ]; then
+  echo "Build FAILED." >&2
   exit 1
 fi
 
-echo
 echo "Done. Output: thesis.pdf"
