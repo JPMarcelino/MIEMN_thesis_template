@@ -10,8 +10,9 @@ all: pdf
 pdf:
 	./build.sh
 
-# Compile only the cover page into cover.pdf.
+# Compile only the cover page into cover.pdf (two passes: TikZ current page).
 cover:
+	pdflatex -interaction=nonstopmode cover.tex
 	pdflatex -interaction=nonstopmode cover.tex
 
 # Build, then report per-chapter page counts against the DCM budgets.

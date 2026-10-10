@@ -21,7 +21,9 @@ run() {
   fi
 }
 
-run "Cover (cover.tex)" $LATEX cover.tex
+# cover.tex uses TikZ "current page", so it needs two passes to settle.
+run "Cover (cover.tex), pass 1" $LATEX cover.tex
+run "Cover (cover.tex), pass 2" $LATEX cover.tex
 run "Thesis, pass 1" $LATEX thesis.tex
 
 echo "==> Glossary (makeglossaries)"

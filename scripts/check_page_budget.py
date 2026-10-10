@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -53,7 +54,18 @@ def read_toc(toc_path: Path) -> list[tuple[str, int]]:
 
 
 def pdf_page_count(pdf_path: Path) -> int | None:
-    """Count pages without external dependencies."""
+    """Count pages, preferring pdfinfo and falling back to a raw scan."""
+    try:
+        out = subprocess.run(
+            ["pdfinfo", str(pdf_path)],
+            capture_output=True, text=True, check=False,
+        ).stdout
+        match = re.search(r"^Pages:\s+(\d+)", out, re.MULTILINE)
+        if match:
+            return int(match.group(1))
+    except (OSError, ValueError):
+        pass
+
     data = pdf_path.read_bytes()
     count = len(re.findall(rb"/Type\s*/Page(?![s])", data))
     return count or None
