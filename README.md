@@ -1,327 +1,212 @@
-# LaTeX Thesis Template
+# MIEMN Master's Thesis Template
 
-A clean, customizable LaTeX thesis template ready for academic writing. This template has been anonymized and is suitable for sharing on GitHub as a starting point for your own thesis.
+[![Build thesis](https://github.com/JPMarcelino/MIEMN_thesis_template/actions/workflows/build.yml/badge.svg)](https://github.com/JPMarcelino/MIEMN_thesis_template/actions/workflows/build.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## Features
+A ready-to-write, rules-compliant LaTeX template for the Master's
+dissertation of the **Integrated Master in Micro and Nanotechnology
+Engineering (MIEMN)** at NOVA FCT.
 
-- **Clean Structure**: Well-organized document with proper front matter and back matter
-- **Automated Navigation**: Table of contents, list of figures, and list of tables
-- **Glossary Support**: Automatic generation of acronyms and notation lists
-- **Customizable Cover**: Professional cover page with university branding
-- **Bibliography Management**: Integrated BibTeX support with IEEE style
-- **Responsive Header/Footer**: Page numbers and section headers
-- **GitHub-Ready**: Complete with `.gitignore` for LaTeX projects
+Fill in one file (`metadata.tex`), write your chapters in `sections/`,
+and you get a properly formatted PDF — title page, bilingual abstract,
+copyright page, lists of abbreviations/notation/figures/tables, IEEE
+bibliography and lettered annexes — plus a live build on GitHub Actions.
 
-## Directory Structure
+## Why this template
 
+- **One place for your details.** Title, name, degree and supervisors are
+  defined once in `metadata.tex` and reused by the title page, the cover
+  and the PDF metadata.
+- **Rules built in.** 2 cm margins, Times New Roman 11 pt, 1.25 line
+  spacing, numbered floats, IEC/ISO units via `siunitx`, IEEE references —
+  all matching the DCM dissertation rules. See [`COMPLIANCE.md`](COMPLIANCE.md).
+- **Compliant figures by default.** A matplotlib style
+  (`Python/miemn.mplstyle`) produces plots with Arial 28 pt ticks and
+  31 pt axis labels, exactly as the rules require.
+- **Beautiful typography.** Times, hyperlinked cross-references
+  (`\cref`), `booktabs` tables, clickable bookmarks and a clean cover.
+- **One-command build.** `make` runs the full pdflatex → makeglossaries →
+  bibtex → pdflatex ×2 cycle and fails loudly on errors.
+- **Continuous integration.** Every push and pull request builds the PDF
+  and uploads it as an artifact; tags publish a release.
+
+## Quick start
+
+### Overleaf
+
+1. Upload this repository (or use *New Project → Import from GitHub*).
+2. Set the main document to `thesis.tex`.
+3. Edit `metadata.tex` and the files in `sections/`.
+
+> Overleaf has xindy and `makeglossaries`, so the abbreviation and
+> notation lists build automatically once you enable the glossary step.
+
+### Local build
+
+Install a full TeX Live distribution (or MiKTeX/MacTeX) — xindy and
+`makeglossaries` are required for the glossary.
+
+```bash
+git clone https://github.com/JPMarcelino/MIEMN_thesis_template.git
+cd MIEMN_thesis_template
+
+make            # full build -> thesis.pdf
+make cover      # rebuild just the cover
+make check      # build + page-budget report
+make clean      # remove auxiliary files
 ```
+
+`make` calls [`build.sh`](build.sh), which is the canonical recipe. Plain
+`latexmk -pdf thesis` also works via the bundled [`.latexmkrc`](.latexmkrc).
+
+### GitHub Actions
+
+No setup needed: pushing to `main` builds `thesis.pdf` and attaches it to
+the workflow run. Push a tag like `v1.0` to publish a release with the PDF.
+
+## What to edit
+
+| File | What it is for |
+| --- | --- |
+| `metadata.tex` | **Start here.** Title, author, degree, supervisors, committee, university, date, keywords. |
+| `sections/abstract.tex` | English abstract (Summary, ~300 words). |
+| `sections/resumo.tex` | Portuguese abstract. |
+| `sections/acknowledgements.tex` | Acknowledgements. |
+| `sections/introduction.tex` | Chapter 1 — Introduction. |
+| `sections/stateoftheart.tex` | Chapter 2 — State of the Art. |
+| `sections/methods.tex` | Chapter 3 — Materials and Methods. |
+| `sections/results.tex` | Chapter 4 — Results and Discussion. |
+| `sections/conclusions.tex` | Chapter 5 — Conclusions and Future Perspectives. |
+| `glossary.tex` | Acronyms and notation. |
+| `bibliography.bib` | Your references (BibTeX). |
+| `sections/appendix_*.tex` | Annexes A–H. Delete the ones you do not use. |
+| `figures/`, `cover-assets/` | Images and cover artwork. |
+
+You should never need to edit `thesis.tex` except to add, remove or
+reorder chapters.
+
+### Wiring your data in
+
+`metadata.tex` defines simple commands that the rest of the document
+consumes:
+
+```latex
+\newcommand*{\thesistitle}{Full Title of Your Thesis}
+\newcommand*{\thesisauthor}{Your Full Name}
+\newcommand*{\thesisdegree}{Master of Science}
+\newcommand*{\thesisprogram}{Micro and Nanotechnology Engineering}
+\newcommand*{\thesisuniversity}{NOVA University Lisbon}
+\newcommand*{\thesissupervisors}{Supervisor One, Supervisor Two}
+```
+
+## Project structure
+
+```text
 .
-├── thesis_jpm_22.5G_MPG_3nm.tex   # Main LaTeX file (RENAME to thesis_main.tex)
-├── cover.tex                     # Cover page source
-├── glossary.tex                  # Acronyms and notation definitions
-├── bibliography.bib              # Bibliography database
-├── .gitignore                   # Git ignore file for LaTeX
-├── README.md                    # This file
-├── figures/                      # Images and graphics
-│   ├── university-logo.png      # UPDATE: Your university logo
-│   ├── Python/                  # Python-generated figures
-│   ├── Results/                 # Result figures
-│   └── Schematics/              # Circuit/System schematics
-├── sections/                     # Thesis chapters
-│   ├── introduction.tex          # Introduction
-│   ├── stateoftheart.tex        # State of the art / Literature review
-│   ├── methods.tex              # Methodology / Materials and methods
-│   ├── results.tex              # Results and discussion
-│   ├── conclusions.tex          # Conclusions and future perspectives
-│   ├── abstract.tex             # English abstract
-│   ├── resumo.tex               # Portuguese abstract (if required)
-│   ├── acknowledgements.tex     # Acknowledgments
-│   ├── copyright.tex            # Copyright page
-│   ├── appendix_a.tex           # Appendix A
-│   ├── appendix_b.tex           # Appendix B
-│   ├── appendix_c.tex           # Appendix C
-│   ├── appendix_d.tex           # Appendix D
-│   ├── appendix_e.tex           # Appendix E
-│   ├── appendix_f.tex           # Appendix F
-│   ├── appendix_g.tex           # Appendix G
-│   └── appendix_h.tex           # Appendix H
-├── cover-assets/                 # Cover page images
-├── Python/                      # Python scripts if needed
-└── cover.pdf                    # Generated cover (ignored in git)
+├── thesis.tex            # main document (preamble + chapter order)
+├── metadata.tex          # your personal data — edit this
+├── cover.tex             # cover page, compiled to cover.pdf
+├── glossary.tex          # acronym + notation definitions
+├── bibliography.bib      # references
+├── build.sh / Makefile   # one-command builds
+├── .latexmkrc            # latexmk configuration
+├── COMPLIANCE.md         # DCM rules → how this template satisfies them
+├── sections/             # all chapters and front/back matter
+├── figures/              # images used in the thesis
+├── cover-assets/         # logos and cover artwork
+├── Python/               # scripts + compliant matplotlib style
+└── scripts/              # build helpers (page-budget report)
 ```
 
-## Getting Started
+## Writing
 
-### Prerequisites
+### Figures
 
-- **LaTeX Distribution**: TeX Live, MiKTeX, or MacTeX
-- **LaTeX Editor**: Overleaf, TeXShop, VS Code with LaTeX Workshop, etc.
-
-### 1. Fork or Clone This Repository
-
-```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-```
-
-### 2. Customize Personal Information
-
-#### a) Rename the Main File
-
-Rename `thesis_jpm_22.5G_MPG_3nm.tex` to something appropriate for your thesis, e.g., `thesis_main.tex`:
-
-```bash
-mv thesis_jpm_22.5G_MPG_3nm.tex thesis_main.tex
-```
-
-#### b) Update `thesis_main.tex` (or your renamed file)
-
-Find and replace all `[bracketed content]` with your information in the `\frontpage` command:
-
-```latex
-\newcommand{\frontpage}{
-    \begin{titlepage}
-        ...
-        {\Huge\bfseries [Your Title Here]\par}
-        ...
-        {\Large\bfseries [Your Full Name]\par}
-        ...
-        for the degree of \emph{[Your Degree]}
-        in [Your Program Name]
-        ...
-        {\bfseries Supervisors:}\\[0.5em]
-        [Supervisor 1 Name], [Supervisor 2 Name]
-        ...
-        {\bfseries Examining Committee:}\\[0.5em]
-        President: [President Name]\\
-        Examiner: [Examiner Name]\\
-        Member: [Member Name]
-        ...
-        [Your University Name]\\
-        {\large [Month Year]\par}
-    \end{titlepage}
-}
-```
-
-Also update the header:
-
-```latex
-\fancyhead[L]{[Your Title Here]} % Header left - UPDATE THIS
-```
-
-#### c) Update `cover.tex`
-
-Edit the metadata at the top of the file:
-
-```latex
-\newcommand*{\coverTitle}{[YOUR TITLE]}
-\newcommand*{\coverAuthor}{[Your Name]}
-\newcommand*{\coverAuthorDegree}{[Your Degree]}
-\newcommand*{\coverProgram}{[Program Name]}
-\newcommand*{\coverUniversity}{[University Name]}
-\newcommand*{\coverDate}{[Month, Year]}
-\newcommand*{\coverSupervisors}{[Supervisor 1]\\[Supervisor 2]}
-\newcommand*{\coverCommittee}{President: Name\\Examiner: Name\\Member: Name}
-\newcommand*{\coverSchool}{[School Name]}
-\newcommand*{\coverDepartment}{[Department Name]}
-```
-
-Replace the university logo files in `cover-assets/` with your own.
-
-#### d) Create Your Content
-
-Edit the chapter files in the `sections/` directory with your actual content:
-
-- `abstract.tex` - English abstract
-- `resumo.tex` - Portuguese abstract (if required)
-- `introduction.tex` - Introduction chapter
-- `stateoftheart.tex` - Literature review
-- `methods.tex` - Methodology
-- `results.tex` - Results and discussion
-- `conclusions.tex` - Conclusions and future work
-- `acknowledgements.tex` - Acknowledgments
-- `copyright.tex` - Copyright page (if required)
-- `appendix_a.tex` through `appendix_h.tex` - Appendices
-
-#### e) Update Glossary
-
-Edit `glossary.tex` to add your specific acronyms and notation:
-
-```latex
-% Acronyms
-\newacronym[type=acronym]{ai}{AI}{Artificial Intelligence}
-\newacronym[type=acronym]{serdes}{SerDes}{Serializer/Deserializer}
-
-% Notation
-\newglossaryentry{tau}{
-  name={\(\tau\)},
-  description={Time constant},
-  sort={tau},
-  type=notation
-}
-```
-
-#### f) Add References
-
-Add your references to `bibliography.bib` in BibTeX format:
-
-```bibtex
-@article{smith2020example,
-  title   = {Your Article Title},
-  author  = {Smith, John and Doe, Jane},
-  journal = {Journal Name},
-  volume  = {15},
-  number  = {3},
-  pages   = {123--145},
-  year    = {2020},
-  doi     = {10.1000/example}
-}
-```
-
-### 3. Building the Document
-
-#### Using pdflatex (for simple documents):
-
-```bash
-pdflatex thesis_main
-bibtex thesis_main
-pdflatex thesis_main
-pdflatex thesis_main
-```
-
-#### Using latexmk (recommended):
-
-```bash
-latexmk -pdf -interaction=nonstopmode thesis_main
-```
-
-#### To clean auxiliary files:
-
-```bash
-latexmk -c
-```
-
-#### To build the cover separately:
-
-```bash
-pdflatex cover
-```
-
-### 4. Including Figures
-
-Place your images in the `figures/` directory and include them:
+Put images in `figures/` (subfolders are fine) and include them with a
+path relative to that folder — `\graphicspath` is already set:
 
 ```latex
 \begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.8\textwidth]{figures/your-image.png}
-    \caption{Your figure caption}
-    \label{fig:your-label}
+  \centering
+  \includegraphics[width=0.8\textwidth]{my-plot.pdf}
+  \caption{Device response as a function of bias.}
+  \label{fig:response}
 \end{figure}
 ```
 
-### 5. Citing References
+Reference it with `\cref{fig:response}` (self-updating “Figure 4.2”, with
+a hyperlink).
 
-Cite references in your text using `\cite{key}`:
+Generate compliant plots with the bundled style:
 
-```latex
-As shown by Smith and Doe \cite{smith2020example}...
+```python
+import sys; sys.path.insert(0, "Python")
+import matplotlib.pyplot as plt, figure_style
+figure_style.use_thesis_style()
+# ... draw ...
+figure_style.save_figure(fig, "figures/Python/my-plot")
 ```
 
-## Customization
+### Tables
 
-### Changing Document Class
-
-The template uses `report` class with 11pt font and A4 paper:
+Use `booktabs` and `siunitx` for publication-quality tables:
 
 ```latex
-\documentclass[11pt, a4paper]{report}
+\begin{table}[htbp]
+  \centering
+  \caption{Measured performance.}
+  \label{tab:performance}
+  \begin{tabular}{l S[table-format=2.1]}
+    \toprule
+    Parameter & {Value (\si{\micro\second})} \\
+    \midrule
+    Rise time & 3.4 \\
+    Fall time & 2.1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 ```
 
-### Page Margins
-
-Adjust margins in the geometry package:
+### Equations, references and acronyms
 
 ```latex
-\usepackage[a4paper, margin=2cm]{geometry}
+\begin{equation}
+  \label{eq:rc}
+  \tau = R\,C
+\end{equation}
+
+As shown in \cref{eq:rc} \cite{smith2020example}, ...
+The \gls{serdes} block ...
 ```
 
-### Line Spacing
+## Page budgets
 
-Default is 1.25 spacing:
+The rules cap the written content at 33 pages. `make check` prints how
+many pages each chapter currently takes and flags anything over budget.
+The full breakdown is in [`COMPLIANCE.md`](COMPLIANCE.md).
 
-```latex
-\setstretch{1.25}
-```
+## Requirements
 
-### Fonts
+- A full TeX Live 2023+ (or MiKTeX/MacTeX) with `pdflatex`, `bibtex`,
+  `makeglossaries` and **xindy** (for the glossary).
+- Python 3 only if you use the figure helpers or the page-budget report.
 
-Template uses Times New Roman font:
+## Troubleshooting
 
-```latex
-\usepackage{times}
-```
-
-## Common Issues
-
-### Missing Image Files
-
-- Replace the placeholder images in `figures/` and `cover-assets/` with your own
-- Or comment out the image includes temporarily while setting up
-
-### Glossary Not Generating
-
-- Make sure `xindy` is installed with your LaTeX distribution
-- Run `makeglossaries thesis_main` before `pdflatex`
-
-### Bibliography Not Appearing
-
-- Ensure your citations use keys that exist in `bibliography.bib`
-- Run `bibtex thesis_main` between `pdflatex` runs
-
-### Chapter Files Not Found
-
-- The template expects chapter files in `sections/` directory
-- Update the `\importsection` commands if using a different structure
-
-## Tips
-
-1. **Commit Often**: Use version control to track changes
-2. **Compile Regularly**: Compile frequently to catch errors early
-3. **Organize References**: Keep your bibliography well-organized
-4. **Use Clear Descriptions**: Make figures and tables self-explanatory
-5. **Check Requirements**: Verify your university's specific formatting requirements
-
-## University-Specific Requirements
-
-**Important**: This template is a general-purpose template. You may need to adjust it to meet your university's specific requirements for:
-- Margins and page layout
-- Header/footer format
-- Text font and size
-- Line spacing
-- Cover page design
-- Abstract formatting (bilingual vs English only)
-- Copyright page requirements
-
-Always check your university thesis guidelines before starting!
-
-## License
-
-This template is provided as-is for educational purposes. Feel free to modify and adapt it for your needs.
+- **Glossary lists are empty.** Run `makeglossaries thesis` (or just run
+  `make`, which does it for you). xindy must be installed.
+- **Bibliography is empty.** Run `bibtex thesis` between pdflatex passes,
+  or use `make`. Check that your `\cite` keys exist in `bibliography.bib`.
+- **“File `cover.pdf` not found”.** Run `make cover` first; the main
+  document warns but still builds without it.
+- **Overfull boxes.** Usually harmless; enable `\usepackage{showframe}` in
+  `thesis.tex` temporarily to see the text block.
 
 ## Contributing
 
-If you find bugs or have suggestions for improvements, please:
-1. Fork the repository
-2. Make your changes
-3. Open a pull request
+Issues and pull requests are welcome. Please keep the template compiling
+cleanly (`make`) and keep personal data out of the committed files.
 
-Or open an issue to report bugs or request features.
+## License
 
-## Changelog
-
-- **v1.0** (2025-01-13): Initial template release
-
----
-
-**Note**: This template has been anonymized with placeholder text. Replace all `[bracketed content]` with your actual information before using for your thesis.
+[MIT](LICENSE).

@@ -1,12 +1,22 @@
-% ======= Glossary setup and entries =======
+% =====================================================================
+% GLOSSARY — acronyms and notation
+% ---------------------------------------------------------------------
+% Add acronyms with \newacronym[type=acronym]{key}{SHORT}{Long form}
+% Add symbols with \newglossaryentry{key}{name=..., description=...,
+%                                          sort=..., type=notation}
+%
+% Use \gls{key} in the text for the first-use expansion, \gls{key} again
+% for the short form. \glsaddall prints every entry even if unused.
+%
+% The lists are printed here and are picked up by the table of contents.
+% =====================================================================
 
-
-% -------- Acronyms ----------
+% -------- Acronyms ----------------------------------------------------
 \newacronym[type=acronym]{ai}{AI}{Artificial Intelligence}
 \newacronym[type=acronym]{ml}{ML}{Machine Learning}
 \newacronym[type=acronym]{serdes}{SerDes}{Serializer/Deserializer}
 
-% -------- Notation ----------
+% -------- Notation ----------------------------------------------------
 \newglossaryentry{dVDD}{
   name={\(\Delta V_{DD}\)},
   description={Local supply voltage deviation / bias shift for fine delay tuning},
@@ -26,7 +36,8 @@
   type=notation
 }
 
-% Add all glossary entries to the document (so they appear even if not referenced)
+% Add every entry to the document (so the lists are complete even if a
+% symbol is not referenced from the running text).
 \glsaddall
 
 \printglossary[type=acronym, style=tabularabbr, title={List of Abbreviations}]

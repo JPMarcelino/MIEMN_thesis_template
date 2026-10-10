@@ -1,85 +1,98 @@
+% =====================================================================
+% MIEMN MASTER'S THESIS — MAIN DOCUMENT
+% ---------------------------------------------------------------------
+% Personal data lives in metadata.tex  -> edit that file, not this one.
+% Chapters live in sections/           -> edit those files.
+% Compile with `make` (or `./build.sh`). See README.md.
+%
+% This layout implements the DCM rules for dissertations
+% ("Rules for Dissertation, approved 2014, amended Nov 2020"):
+%   * English, Times New Roman 11 pt, 1.25 line spacing
+%   * 2 cm margins on every side
+%   * numbered equations, tables and figures
+%   * content <= 33 pages excluding annexes/indexes/abbreviation list
+% See COMPLIANCE.md for the full checklist.
+% =====================================================================
 \documentclass[11pt, a4paper]{report}
 
-% =====================================================================
-% PACKAGES
-% =====================================================================
-\usepackage[a4paper, margin=2cm]{geometry} % Adjust page margins
-\usepackage{times} % Times New Roman font
-\usepackage{setspace} % For line spacing
-\usepackage{fancyhdr} % For custom headers/footers
-\usepackage{graphicx} % For including images
-\usepackage{caption} % For figure/table captions
-\usepackage{float} % For precise placement of figures/tables
-\usepackage{tocbibind} % Include bibliography in the Table of Contents
-\usepackage{amsmath, amssymb} % For mathematical symbols
-\usepackage{lipsum} % For placeholder text (remove in final document)
-\usepackage{appendix} % For appendices
-\usepackage{xcolor} % For custom colors
-\usepackage{wallpaper} % For background images
-\usepackage[numbers]{natbib} % For bibliography management
-\usepackage{microtype} % Improves spacing and typography
-\usepackage{ragged2e} % Better text alignment
-\usepackage{bookmark} % Added to resolve the warning
-\usepackage{siunitx} % For typesetting SI units
-\usepackage{booktabs} % For professional quality tables
-\usepackage{textcomp} % Provides extra symbols
-\usepackage{gensymb} % Provides generic symbols for degrees, etc.
-\usepackage{subcaption}   % modern subfigures
-\usepackage{tabularx,threeparttable,makecell} % For advanced table formatting
-\usepackage{enumitem} % For custom lists
-\usepackage{verbatim} % For verbatim text (e.g., code snippets)
-\usepackage{listings} % For code listings
-\usepackage{tikz} % For drawing diagrams
-\usepackage{titlesec} % For custom headings
-\usepackage[xindy]{glossaries} % For creating glossaries and lists of acronyms
-\usepackage{pdfpages} % For including PDF pages (For the cover page if needed as PDF)
+% ---- Personal data (must come before \hypersetup below) --------------
+\input{metadata}
 
+% ---- Encoding & fonts -------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{times}                 % Times New Roman (rule 1a)
 
-% Define two glossaries: one for acronyms, one for notation
+% ---- Page layout ------------------------------------------------------
+\usepackage[a4paper, margin=2cm]{geometry}   % 2 cm on every side (rule 1f)
+\usepackage{setspace}              % line spacing
+\usepackage{fancyhdr}              % headers/footers
+\usepackage{microtype}             % better justification/typography
+\usepackage{ragged2e}              % better alignment control
+
+% ---- Floats, captions & graphics -------------------------------------
+\usepackage{graphicx}
+\graphicspath{{figures/}{cover-assets/}}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{booktabs}              % professional rules (\toprule, ...)
+\usepackage{tabularx}
+\usepackage{threeparttable}
+\usepackage{makecell}
+\usepackage{pdfpages}              % include the compiled cover.pdf
+
+% ---- Mathematics & units ---------------------------------------------
+\usepackage{amsmath, amssymb}
+\usepackage{siunitx}               % SI units and scientific notation
+
+% ---- Code, lists & drawings ------------------------------------------
+\usepackage[dvipsnames]{xcolor}    % load before tikz (it loads xcolor too)
+\usepackage{enumitem}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{tikz}
+
+% ---- Headings & contents ---------------------------------------------
+\usepackage{titlesec}
+\usepackage{lipsum}                % placeholder text — remove before submission
+\usepackage[lot, lof]{tocbibind}   % LoF/LoT/bibliography in the ToC
+
+% ---- References -------------------------------------------------------
+% Numeric IEEE-style bibliography (rule 1e allows American/IOP styles).
+\usepackage[numbers]{natbib}
+\bibliographystyle{IEEEtran}
+
+% ---- Hyperlinks & cross-references -----------------------------------
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={\thesistitle},
+  pdfauthor={\thesisauthor},
+  pdfsubject={Master's dissertation, \thesisprogram},
+  pdfkeywords={\thesiskeywords},
+}
+
+% ---- Glossary (acronyms + notation) ----------------------------------
+\usepackage[xindy, toc]{glossaries}
 \newglossary[alg]{acronym}{acr}{acn}{List of Abbreviations}
 \newglossary[nlg]{notation}{not}{ntn}{List of Notation}
 \makeglossaries
-
-% Custom glossary styles to produce your tabular layouts
-\newglossarystyle{tabularabbr}{%
-  \setglossarystyle{long}% base style
-  \renewenvironment{theglossary}%
-    {\begin{tabular}{p{0.18\linewidth} p{0.75\linewidth}}%
-     \textbf{Abbreviation} & \textbf{Definition} \\ \hline}%
-    {\end{tabular}}%
-  \renewcommand*{\glossentry}[2]{%
-    \glsentryshort{##1} & \glsentrylong{##1} \\  
-  }%
-}
-
-\newglossarystyle{tabularnotation}{%
-  \setglossarystyle{long}%
-  \renewenvironment{theglossary}%
-    {\begin{tabular}{p{0.25\linewidth} p{0.75\linewidth}}%
-     \textbf{Symbol} & \textbf{Meaning} \\ \hline}%
-    {\end{tabular}}%
-  \renewcommand*{\glossentry}[2]{%
-    \glsentryname{##1} & \glossentrydesc{##1} \\%
-  }%
-}
-
+\usepackage[nameinlink, noabbrev]{cleveref}
 
 % =====================================================================
-% FORMATTING & SETUP
+% FORMATTING
 % =====================================================================
-\setstretch{1.25} % Set line spacing to 1.25 as per regulations
+\setstretch{1.25}                  % 1.25 line spacing (rule 1a)
 
 \setcounter{secnumdepth}{5}
-\setcounter{tocdepth}{5}
-\captionsetup[figure]{font=small}
-\setlength{\emergencystretch}{3em}
-\bibliographystyle{IEEEtran}
-\tolerance=1000
-\emergencystretch=\maxdimen%
-\hyphenpenalty=10000
-\hbadness=10000
+\setcounter{tocdepth}{2}           % chapters + sections in the ToC
 
-% Customizing headings (user preference, kept as is)
+\captionsetup{font=small, labelfont=bf}
+\captionsetup[table]{position=top}
+
+\sisetup{per-mode=symbol, detect-weight}
+
+% Ragged-right headings look intentional rather than stretched.
 \titleformat{\chapter}[hang]
     {\normalfont\huge\bfseries\raggedleft}
     {\thechapter\hspace{1em}\textbar\hspace{1em}}
@@ -93,161 +106,172 @@
     {}
 \titlespacing*{\section}{0pt}{0pt}{0pt}
 
-% Header and Footer customization to meet regulations
+% Header and footer (rule 1f: no empty space between sections).
 \pagestyle{fancy}
-\fancyhf{} % Clear all header and footer fields
-\fancyhead[L]{[Your Title Here]} % Header left - UPDATE THIS
-\fancyfoot[R]{\thepage} % Page numbers at the bottom right
+\fancyhf{}
+\fancyhead[L]{\thesisrunninghead}
+\fancyfoot[R]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
 \setlength{\headheight}{14.5pt}
 
-% Import system for sections
+% =====================================================================
+% CUSTOM GLOSSARY STYLES (tabular acronym / notation lists)
+% =====================================================================
+\newglossarystyle{tabularabbr}{%
+  \setglossarystyle{long}%
+  \renewenvironment{theglossary}%
+    {\begin{tabular}{p{0.18\linewidth} p{0.75\linewidth}}%
+     \textbf{Abbreviation} & \textbf{Definition} \\ \hline}%
+    {\end{tabular}}%
+  \renewcommand*{\glossentry}[2]{%
+    \glsentryshort{##1} & \glsentrylong{##1} \\%
+  }%
+}
+\newglossarystyle{tabularnotation}{%
+  \setglossarystyle{long}%
+  \renewenvironment{theglossary}%
+    {\begin{tabular}{p{0.25\linewidth} p{0.75\linewidth}}%
+     \textbf{Symbol} & \textbf{Meaning} \\ \hline}%
+    {\end{tabular}}%
+  \renewcommand*{\glossentry}[2]{%
+    \glsentryname{##1} & \glossentrydesc{##1} \\%
+  }%
+}
+
+% =====================================================================
+% HELPER MACROS
+% =====================================================================
+
+% Include a file from sections/ : \importsection{introduction}
 \newcommand{\importsection}[1]{\input{sections/#1}}
 
-% =====================================================================
-% CUSTOM COMMANDS FOR FRONT/BACK MATTER
-% =====================================================================
-
-% Updated front page to include all required information
-\newcommand{\frontpage}{
-    \begin{titlepage}
-        \centering
-        \includegraphics[width=0.3\textwidth]{figures/university-logo.png}\\ % University logo - REPLACE WITH YOUR LOGO
-        \vspace{2cm}
-        {\Huge\bfseries [Your Title Here]\par}\ % UPDATE TITLE
-        \centering
-        \vspace{1.5cm}
-        %{\Large Subtitle if applicable\par}
-        %\vfill
-        {\Large\bfseries [Your Full Name]\par} % UPDATE YOUR NAME
-        \vfill
-        A thesis submitted in fulfillment of the requirements\\
-        for the degree of \emph{[Your Degree]}\\ % UPDATE DEGREE
-        in [Your Program Name]\\ % UPDATE PROGRAM
-        \vspace{2cm}
-        {\bfseries Supervisors:}\\[0.5em]
-        [Supervisor 1 Name], [Supervisor 2 Name]\\[2cm] % UPDATE SUPERVISORS
-        {\bfseries Examining Committee:}\\[0.5em]
-        President: [President Name]\\
-        Examiner: [Examiner Name]\\
-        Member: [Member Name]\\[2cm] % UPDATE COMMITTEE
-        [Your University Name]\\ % UPDATE UNIVERSITY
-        \vspace{1cm}
-        {\large [Month Year]\par} % UPDATE DATE
-    \end{titlepage}
+% Unnumbered front-matter heading AND a ToC entry.
+\newcommand{\frontchapter}[1]{%
+  \cleardoublepage
+  \chapter*{#1}%
+  \phantomsection
+  \addcontentsline{toc}{chapter}{#1}%
 }
 
-% ADDED: Command for the mandatory copyright page
-\newcommand{\copyrightpage}{
-    \thispagestyle{empty}
-    \vspace*{0.1\textheight} % Adjust spacing as needed
-    \importsection{copyright} % Create a "copyright.tex" file with the required text
-    \cleardoublepage
+% Title page, driven entirely by metadata.tex.
+\newcommand{\frontpage}{%
+  \begin{titlepage}
+    \centering
+    \includegraphics[width=0.3\textwidth]{university-logo.png}\par
+    \vspace{2cm}
+    {\Huge\bfseries \thesistitle\par}
+    \vspace{1.5cm}
+    {\Large\bfseries \thesisauthor\par}
+    \vfill
+    A dissertation submitted in fulfillment of the requirements\\
+    for the degree of \emph{\thesisdegree}\\
+    in \thesisprogram\par
+    \vspace{2cm}
+    {\bfseries Supervisors:}\\[0.5em]
+    \thesissupervisors\par
+    \vspace{2cm}
+    {\bfseries Examining Committee:}\\[0.5em]
+    \thesiscommittee\par
+    \vspace{2cm}
+    \thesisuniversity\\
+    \thesisschool\par
+    \vspace{1cm}
+    {\large \thesisdate\par}
+  \end{titlepage}
+}
+
+% Mandatory copyright page (content in sections/copyright.tex).
+\newcommand{\copyrightpage}{%
+  \thispagestyle{empty}%
+  \vspace*{0.1\textheight}%
+  \importsection{copyright}%
+  \cleardoublepage
 }
 
 % =====================================================================
-% DOCUMENT START
+% DOCUMENT
 % =====================================================================
 \begin{document}
 
-\includepdf[
-  pages=1,
-  pagecommand={\thispagestyle{empty}},
-  offset=0 0
-]{cover.pdf}
+% ---- External cover page (compiled from cover.tex) -------------------
+\IfFileExists{cover.pdf}{%
+  \includepdf[pages=1, pagecommand={\thispagestyle{empty}}]{cover.pdf}%
+}{%
+  \PackageWarningNoLine{thesis}{cover.pdf not found --- run `make cover`}%
+}
 
-
-\frontpage%
+\frontpage
 \thispagestyle{empty}
 
-% Copyright page immediately after title page
 \copyrightpage
 
-\pagenumbering{roman} % Roman numerals for preliminary pages
+% ---- Preliminary pages (roman numerals) ------------------------------
+\pagenumbering{roman}
 
-\chapter*{Abstract}
-\importsection{abstract} % NOTE: Create an "abstract.tex" file for your English abstract
-\cleardoublepage % Ensure next section starts on an odd page
+\frontchapter{Abstract}
+\importsection{abstract}
 
-% Replaced "Summary" with required Portuguese and English abstracts
-\chapter*{Resumo}
-\importsection{resumo} % NOTE: Create a "resumo.tex" file for your Portuguese abstract
-\cleardoublepage % Ensure next section starts on an odd page
+\frontchapter{Resumo}
+\importsection{resumo}
 
-\chapter*{Acknowledgements}
+\frontchapter{Acknowledgements}
 \importsection{acknowledgements}
 
-\input{glossary} % assumes glossary.tex is in same directory!
+% Acronyms + notation. glossary.tex prints both lists and adds them to the ToC.
+\cleardoublepage
+\input{glossary}
 
-\addtocontents{toc}{\protect\setcounter{tocdepth}{-1}}
+\cleardoublepage
 \tableofcontents
-\cleardoublepage
 
+\cleardoublepage
 \listoffigures
-\cleardoublepage
 
+\cleardoublepage
 \listoftables
-\cleardoublepage
-\addtocontents{toc}{\protect\setcounter{tocdepth}{5}}
 
-
-% Start main content with Arabic numerals from page 1
+% ---- Main content (arabic numerals, starts at page 1) ----------------
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
 \chapter{Introduction}
+\label{ch:introduction}
 \importsection{introduction}
-\cleardoublepage
 
 \chapter{State of the Art}
+\label{ch:stateoftheart}
 \importsection{stateoftheart}
-\cleardoublepage
 
 \chapter{Materials and Methods}
+\label{ch:methods}
 \importsection{methods}
-\cleardoublepage
 
 \chapter{Results and Discussion}
+\label{ch:results}
 \importsection{results}
-\cleardoublepage
 
 \chapter{Conclusions and Future Perspectives}
+\label{ch:conclusions}
 \importsection{conclusions}
-\cleardoublepage
 
+% ---- References ------------------------------------------------------
+\cleardoublepage
 {\fontsize{9pt}{11pt}\selectfont
 \setlength{\bibsep}{0pt}
 \bibliography{bibliography}
 }
-\cleardoublepage
 
+% ---- Annexes (lettered chapters A, B, C, ...) ------------------------
+\cleardoublepage
 \appendix
-\chapter{Annexes}
 \importsection{appendix_a}
-\cleardoublepage
 \importsection{appendix_b}
-\cleardoublepage
-
 \importsection{appendix_c}
-\cleardoublepage
-
 \importsection{appendix_d}
-\cleardoublepage
-
 \importsection{appendix_e}
-\cleardoublepage
-
 \importsection{appendix_f}
-\cleardoublepage
-
 \importsection{appendix_g}
-\cleardoublepage
-
 \importsection{appendix_h}
-\cleardoublepage
 
 \end{document}
-
-
-

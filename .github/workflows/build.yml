@@ -1,0 +1,79 @@
+name: Build thesis
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Compile PDF
+    runs-on: ubuntu-latest
+    container:
+      image: texlive/texlive:latest   # full TeX Live (pdflatex, bibtex, xindy)
+      options: --user root
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build cover + thesis
+        run: bash build.sh
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: thesis-pdf
+          path: |
+            thesis.pdf
+            thesis.toc
+          if-no-files-found: error
+
+      - name: Upload build log (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thesis-log
+          path: thesis.log
+          if-no-files-found: ignore
+
+  page-budget:
+    name: Page-budget report
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: thesis-pdf
+          path: .
+
+      - name: Report page counts against the DCM budgets
+        # Advisory only — remove `continue-on-error` to make it a hard gate.
+        continue-on-error: true
+        run: python3 scripts/check_page_budget.py thesis.pdf
+
+  release:
+    name: Attach PDF to release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: thesis-pdf
+          path: .
+
+      - name: Create release with thesis.pdf
+        uses: softprops/action-gh-release@v2
+        with:
+          files: thesis.pdf
+          generate_release_notes: true

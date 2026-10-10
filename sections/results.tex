@@ -22,15 +22,15 @@ Discuss the results in relation to your research questions.
 
 \begin{table}[htbp]
   \centering
-  \caption{Description of table 1}
+  \caption{Description of table 1.}
   \label{tab:result1}
-  \begin{tabular}{|c|c|c|}
-    \hline
-    Parameter & Value & Unit \\
-    \hline
-    Example 1 & 10.5 & units \\
-    Example 2 & 23.7 & units \\
-    \hline
+  \begin{tabular}{l S[table-format=2.1] l}
+    \toprule
+    Parameter & {Value} & Unit \\
+    \midrule
+    Example 1 & 10.5 & \si{\micro\second} \\
+    Example 2 & 23.7 & \si{\micro\second} \\
+    \bottomrule
   \end{tabular}
 \end{table}
 

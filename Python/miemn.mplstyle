@@ -1,0 +1,53 @@
+# =====================================================================
+# MIEMN thesis figure style
+# ---------------------------------------------------------------------
+# Implements the DCM rule 1d:
+#   * axis tick numbers in Arial 28 pt
+#   * axis labels in Arial 30-32 pt (we use 31 pt)
+#   * fonts embedded as Type 42 so the PDF is portable
+#
+# Use it like this:
+#
+#   import matplotlib.pyplot as plt
+#   plt.style.use("Python/miemn.mplstyle")
+#
+# If you place the figure with \includegraphics[width=\textwidth]{...}
+# the physical font sizes are preserved, so the printed result is
+# exactly 28/31 pt.
+# =====================================================================
+
+font.family:        sans-serif
+font.sans-serif:    Arial, Liberation Sans, Helvetica, Nimbus Sans, DejaVu Sans
+
+# Text sizes (rule 1d)
+axes.labelsize:     31
+axes.titlesize:     31
+xtick.labelsize:    28
+ytick.labelsize:    28
+legend.fontsize:    24
+
+# Figure geometry — 6.69 in == 17 cm == the text block width
+figure.figsize:     6.69, 4.5
+figure.dpi:         150
+savefig.dpi:        300
+savefig.bbox:       tight
+savefig.pad_inches: 0.02
+
+# Vector output with embedded fonts
+pdf.fonttype:       42
+ps.fonttype:        42
+
+# Clean, publication-style axes
+axes.grid:          False
+axes.linewidth:     1.0
+axes.spines.top:    True
+axes.spines.right:  True
+xtick.direction:    in
+ytick.direction:    in
+xtick.major.size:   6
+ytick.major.size:   6
+xtick.minor.size:   3
+ytick.minor.size:   3
+lines.linewidth:    1.5
+lines.markersize:   5
+legend.frameon:     False

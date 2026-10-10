@@ -1,0 +1,11 @@
+# Treat binary assets as binary so diffs stay readable.
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.tif   binary
+*.tiff  binary
+
+# Jupyter notebooks: do not count as project source in language stats.
+*.ipynb linguist-vendored

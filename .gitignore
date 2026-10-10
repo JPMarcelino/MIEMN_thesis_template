@@ -1,4 +1,4 @@
-# LaTeX auxiliary and log files
+# ---- LaTeX auxiliary files -------------------------------------------
 *.aux
 *.bbl
 *.bcf
@@ -20,60 +20,49 @@
 *.vrb
 *.xdv
 
-# Intermediate documents
+# ---- Glossary files ---------------------------------------------------
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.ist
+*.nlg
+*.not
+*.ntn
+*.xdy
+
+# ---- Intermediate documents ------------------------------------------
 *.dvi
 *.pdfsync
 *.ps
 *.eps
 
-# Generated directories
+# ---- Generated directories -------------------------------------------
 *_minted*
 _texmf/
+build/
+output/
+latex.out/
+latexmk/
 
-# Editor swap/backup files
+# ---- Editor swap / backup files --------------------------------------
 *.swp
 *.swo
 *~
 
-# Latexmk auxiliary files
-latex.out/
-latexmk/
-
-# TeXShop and TeXworks
+# ---- Editors ----------------------------------------------------------
 texshop/
 texworks/
+.vscode/
 
-# Miscellaneous
-texput.log
-*.asy
-*.glg
-*.glo
-*.gls
-*.ist
-*.acn
-*.acr
-*.alg
-*.glsdefs
+# ---- Python -----------------------------------------------------------
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
 
-# Build artifacts
-build/
-output/
-
-# Thesis-specific generated files
-*.acn
-*.alg
-*.glo
-*.gls
-*.glsdefs
-*.glg
-*.nlg
-*.ntn
-*.not
-*.xdy
-
-# OS generated files
+# ---- OS ---------------------------------------------------------------
 .DS_Store
 Thumbs.db
-
-# VS Code settings (optional - remove if you want to track settings)
-.vscode/

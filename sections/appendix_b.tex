@@ -1,25 +1,31 @@
-% ======================================================================
-% Appendix B: [Title of Appendix B]
-% ======================================================================
+% =====================================================================
+% APPENDIX B
+% =====================================================================
 
-\section{[Section Title]}
+\chapter{Additional Results}
+\label{app:results}
 
-This appendix provides additional supporting material.
+\section{Supporting Tables}
 
-\subsection{[Subsection Title]}
+Additional data that supports the discussion in \cref{ch:results}.
 
-Detailed information, tables, or figures that support the main text.
+\subsection{Measurement Summary}
 
 \begin{table}[htbp]
   \centering
-  \caption{[Table caption]}
+  \begin{threeparttable}
+  \caption{Supplementary measurement summary.\tnote{a}}
   \label{tab:app-b-1}
-  \begin{tabular}{|c|c|c|}
-    \hline
-    Parameter & Value & Unit \\
-    \hline
-    ... & ... & ... \\
-    ... & ... & ... \\
-    \hline
+  \begin{tabular}{l S[table-format=2.1] l}
+    \toprule
+    Parameter & {Value} & Unit \\
+    \midrule
+    Example 1 & 10.5 & \si{\micro\meter} \\
+    Example 2 & 23.7 & \si{\micro\meter} \\
+    \bottomrule
   \end{tabular}
+  \begin{tablenotes}\footnotesize
+    \item[a] Values are mean of three runs.
+  \end{tablenotes}
+  \end{threeparttable}
 \end{table}
