@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/hero.png" alt="MIEMN Master's Thesis Template — a rules-compliant LaTeX template for NOVA FCT" width="100%">
+  <img src="docs/assets/hero.png" alt="MIEMN Master's Thesis Template, a rules-compliant LaTeX template for NOVA FCT" width="100%">
 </p>
 
 <p align="center">
@@ -12,212 +12,161 @@
 </p>
 
 <p align="center">
-  A ready-to-write, <b>rules-compliant LaTeX template</b> for the Master's dissertation of the<br>
-  <b>Integrated Master in Micro and Nanotechnology Engineering (MIEMN)</b> at NOVA FCT.
+  A LaTeX template for the master's dissertation of the Integrated Master in<br>
+  Micro and Nanotechnology Engineering (MIEMN) at NOVA FCT.
 </p>
 
 <p align="center">
-  <a href="#why-this-template">Why this template</a> ·
-  <a href="#see-the-output">See the output</a> ·
+  <a href="#what-it-does">What it does</a> ·
+  <a href="#what-the-pages-look-like">The pages</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#what-to-edit">What to edit</a> ·
-  <a href="#writing">Writing</a> ·
-  <a href="COMPLIANCE.md">Compliance</a>
+  <a href="#getting-started">Getting started</a> ·
+  <a href="#which-file-does-what">Files</a> ·
+  <a href="#writing-your-chapters">Writing</a> ·
+  <a href="COMPLIANCE.md">Rules</a>
 </p>
 
 ---
 
-Fill in **one file** ([`metadata.tex`](metadata.tex)), write your chapters in [`sections/`](sections),
-and get a properly formatted PDF — title page, bilingual abstract, copyright page,
-lists of abbreviations/notation/figures/tables, IEEE bibliography and lettered
-annexes — plus a **live build on GitHub Actions**. You never fight the formatting
-rules again; they are baked into the template.
+You fill in one file, [`metadata.tex`](metadata.tex), and write your chapters in
+[`sections/`](sections). Then `make` builds a PDF with the cover, title page, both
+abstracts, the copyright page, the lists of abbreviations and notation, the IEEE
+bibliography and the annexes. GitHub runs the same build on every push.
 
-## Why this template
+The text that ships in `sections/` is a joke about AI-written prose, because we all
+know how the first draft arrives. It is placeholder content. Replace it, and please
+do not leave "delves into the intricate tapestry" in the version you submit.
 
-<table>
-<tr>
-<td width="33%" valign="top">
-<b>One place for your details</b><br><br>
-Title, name, degree and supervisors are defined once in <code>metadata.tex</code> and reused by the title page, the cover and the PDF metadata.
-</td>
-<td width="33%" valign="top">
-<b>Rules built in</b><br><br>
-2 cm margins, Times New Roman 11 pt, 1.25 line spacing, numbered floats, IEC/ISO units via <code>siunitx</code>, IEEE references — all matching the DCM rules.
-</td>
-<td width="33%" valign="top">
-<b>Compliant figures by default</b><br><br>
-A matplotlib style (<code>Python/miemn.mplstyle</code>) produces plots with Arial 28 pt ticks and 31 pt axis labels, exactly as the rules require.
-</td>
-</tr>
-<tr>
-<td width="33%" valign="top">
-<b>Beautiful typography</b><br><br>
-Times, hyperlinked cross-references (<code>\cref</code>), <code>booktabs</code> tables, clickable bookmarks and a clean TikZ cover.
-</td>
-<td width="33%" valign="top">
-<b>One-command build</b><br><br>
-<code>make</code> runs the full <code>pdflatex → makeglossaries → bibtex → pdflatex ×2</code> cycle and fails loudly on errors.
-</td>
-<td width="33%" valign="top">
-<b>Continuous integration</b><br><br>
-Every push and pull request builds the PDF and uploads it as an artifact; tags publish a release.
-</td>
-</tr>
-</table>
+## What it does
 
-## See the output
+The template takes care of the parts the department checks, so you can think about
+the research instead.
 
-Every page below is produced by the template. The body text is placeholder
-content — replace it with your own.
+- Times New Roman at 11 pt, 1.25 line spacing, 2 cm margins on all four sides.
+- A title page and a separate cover, both built from [`metadata.tex`](metadata.tex).
+- English and Portuguese abstracts, a copyright page, and lists of abbreviations,
+  notation, figures and tables.
+- Numbered figures, tables and equations, cross referenced with `\cref`.
+- An IEEE bibliography and lettered annexes.
+
+## What the pages look like
+
+Every page here comes from the template. The body text is the placeholder joke; the
+fonts, margins and numbering are the real thing.
 
 <p align="center">
   <img src="docs/assets/pages-overview.png" alt="All 29 pages of the compiled thesis" width="100%">
   <br>
-  <sub><b>All 29 pages</b> of the sample document, compiled by <code>make</code>.</sub>
+  <sub>The 29 pages of the sample document, built by <code>make</code>.</sub>
 </p>
 
 <table align="center">
   <tr>
     <td align="center" valign="top">
       <a href="docs/assets/pages/title.png"><img src="docs/assets/pages/title.png" width="235" alt="Title page"></a><br>
-      <sub><b>Title page</b><br>driven entirely by <code>metadata.tex</code></sub>
+      <sub><b>Title page</b><br>filled in from <code>metadata.tex</code></sub>
     </td>
     <td align="center" valign="top">
       <a href="docs/assets/pages/contents.png"><img src="docs/assets/pages/contents.png" width="235" alt="Table of contents"></a><br>
-      <sub><b>Contents</b><br>auto-generated, with hyperlinks</sub>
+      <sub><b>Contents</b><br>built by LaTeX, with links</sub>
     </td>
     <td align="center" valign="top">
       <a href="docs/assets/pages/introduction.png"><img src="docs/assets/pages/introduction.png" width="235" alt="Chapter opener"></a><br>
-      <sub><b>Chapter opener</b><br>numbered headings and running head</sub>
+      <sub><b>A chapter</b><br>numbered headings and running head</sub>
     </td>
   </tr>
   <tr>
     <td align="center" valign="top">
-      <a href="docs/assets/pages/table.png"><img src="docs/assets/pages/table.png" width="235" alt="Publication-quality table"></a><br>
-      <sub><b>Tables</b><br><code>booktabs</code> + <code>siunitx</code> units</sub>
+      <a href="docs/assets/pages/table.png"><img src="docs/assets/pages/table.png" width="235" alt="A table"></a><br>
+      <sub><b>Tables</b><br><code>booktabs</code> and <code>siunitx</code> units</sub>
     </td>
     <td align="center" valign="top">
       <a href="docs/assets/pages/abbreviations.png"><img src="docs/assets/pages/abbreviations.png" width="235" alt="List of abbreviations"></a><br>
-      <sub><b>Abbreviations &amp; notation</b><br>glossary + xindy, in the ToC</sub>
+      <sub><b>Abbreviations</b><br>the glossary, with notation</sub>
     </td>
     <td align="center" valign="top">
       <a href="docs/assets/pages/bibliography.png"><img src="docs/assets/pages/bibliography.png" width="235" alt="Bibliography"></a><br>
-      <sub><b>Bibliography</b><br>IEEE style via <code>natbib</code></sub>
+      <sub><b>Bibliography</b><br>numbered IEEE style</sub>
     </td>
   </tr>
 </table>
 
 ## How it works
 
-### Your workflow
+### Day to day
 
-Edit two things, run one command, get a submission-ready PDF.
-
-<p align="center">
-  <img src="docs/assets/flow-author.png" alt="Fill in metadata, write your chapters, run make, submit thesis.pdf" width="100%">
-</p>
-
-### What `make` does under the hood
-
-`build.sh` is the canonical recipe — no manual LaTeX incantations to remember.
+You change two things, run one command, and get a finished PDF.
 
 <p align="center">
-  <img src="docs/assets/flow-build.png" alt="Build pipeline: cover, pdflatex, makeglossaries, bibtex, pdflatex" width="100%">
+  <img src="docs/assets/author.png" alt="Fill in metadata, write your chapters, run make, submit the PDF" width="100%">
 </p>
 
-### Continuous integration, out of the box
+### What `make` runs
 
-No servers or secrets: the standard TeX Live image does the work.
+[`build.sh`](build.sh) is the recipe. It builds the cover on its own, then runs
+pdflatex, makeglossaries and bibtex in the right order.
 
 <p align="center">
-  <img src="docs/assets/flow-ci.png" alt="GitHub Actions pipeline: push builds an artifact, tags publish a release" width="100%">
+  <img src="docs/assets/build.png" alt="Build pipeline: cover, pdflatex, makeglossaries, bibtex, pdflatex" width="100%">
 </p>
 
-## Quick start
+### What GitHub does
 
-<table>
-<tr>
-<td width="50%" valign="top">
-<b>Overleaf</b><br><br>
-<ol>
-<li>Upload this repository (or <i>New Project → Import from GitHub</i>).</li>
-<li>Set the main document to <code>thesis.tex</code>.</li>
-<li>Edit <code>metadata.tex</code> and the files in <code>sections/</code>.</li>
-</ol>
-Overleaf has xindy and <code>makeglossaries</code>, so the abbreviation and notation lists build automatically once you enable the glossary step.
-</td>
-<td width="50%" valign="top">
-<b>GitHub Actions</b><br><br>
-No setup needed: pushing to <code>main</code> builds <code>thesis.pdf</code> and attaches it to the workflow run. Push a tag like <code>v1.0</code> to publish a release with the PDF.
-</td>
-</tr>
-</table>
+You do not have to install anything to get a PDF. Actions builds it in a stock
+TeX Live container on every push, and a tag publishes it as a release.
 
-**Local build** — install a full TeX Live distribution (or MiKTeX/MacTeX);
-xindy and `makeglossaries` are required for the glossary.
+<p align="center">
+  <img src="docs/assets/ci.png" alt="GitHub Actions builds an artifact on each push and a release on each tag" width="100%">
+</p>
+
+## Getting started
+
+The quickest way is Overleaf. Upload this repository, or start a new project and
+import it from GitHub. Set `thesis.tex` as the main document, then edit
+`metadata.tex` and the files in `sections/`. Overleaf ships xindy and
+`makeglossaries`, so the abbreviation and notation lists build on their own.
+
+To build on your own machine, install a full TeX Live, MiKTeX or MacTeX. You need
+xindy and `makeglossaries` for the glossary.
 
 ```bash
 git clone https://github.com/JPMarcelino/MIEMN_thesis_template.git
 cd MIEMN_thesis_template
 
-make            # full build -> thesis.pdf
+make            # full build, writes thesis.pdf
 make cover      # rebuild just the cover
-make check      # build + page-budget report
-make clean      # remove auxiliary files
+make check      # build, then print the page counts
+make clean      # remove the auxiliary files
 ```
 
-`make` calls [`build.sh`](build.sh), which is the canonical recipe. Plain
-`latexmk -pdf thesis` also works via the bundled [`.latexmkrc`](.latexmkrc).
+`make` calls [`build.sh`](build.sh), which is the file to read if you want to know
+what happens. Plain `latexmk -pdf thesis` also works, using the bundled
+[`.latexmkrc`](.latexmkrc).
 
-## What to edit
+## Which file does what
 
 <p align="center">
-  <img src="docs/assets/structure.png" alt="Repository map: which files to edit, add, or leave alone" width="100%">
+  <img src="docs/assets/tree.png" alt="Repository layout: which files to edit, add or leave alone" width="100%">
 </p>
 
-| File | What it is for |
-| --- | --- |
-| [`metadata.tex`](metadata.tex) | **Start here.** Title, author, degree, supervisors, committee, university, date, keywords. |
-| [`sections/abstract.tex`](sections/abstract.tex) | English abstract (Summary, ~300 words). |
-| [`sections/resumo.tex`](sections/resumo.tex) | Portuguese abstract. |
-| [`sections/acknowledgements.tex`](sections/acknowledgements.tex) | Acknowledgements. |
-| [`sections/introduction.tex`](sections/introduction.tex) | Chapter 1 — Introduction. |
-| [`sections/stateoftheart.tex`](sections/stateoftheart.tex) | Chapter 2 — State of the Art. |
-| [`sections/methods.tex`](sections/methods.tex) | Chapter 3 — Materials and Methods. |
-| [`sections/results.tex`](sections/results.tex) | Chapter 4 — Results and Discussion. |
-| [`sections/conclusions.tex`](sections/conclusions.tex) | Chapter 5 — Conclusions and Future Perspectives. |
-| [`glossary.tex`](glossary.tex) | Acronyms and notation. |
-| [`bibliography.bib`](bibliography.bib) | Your references (BibTeX). |
-| [`sections/appendix_*.tex`](sections) | Annexes A–H. Delete the ones you do not use. |
-| [`figures/`](figures), [`cover-assets/`](cover-assets) | Images and cover artwork. |
+You edit [`metadata.tex`](metadata.tex) for your details, write the chapters in
+[`sections/`](sections), drop images in [`figures/`](figures) and references in
+[`bibliography.bib`](bibliography.bib). You almost never touch `thesis.tex`, and only
+then to add or reorder chapters. Annexes A to H live in
+[`sections/appendix_*.tex`](sections); delete the ones you do not use and remove the
+matching line in `thesis.tex`.
 
-You should never need to edit `thesis.tex` except to add, remove or reorder chapters.
+Under the hood, [`glossary.tex`](glossary.tex) defines acronyms and notation, and
+[`Python/miemn.mplstyle`](Python/miemn.mplstyle) is a matplotlib style that draws
+plots the way the rules ask.
+
+## Writing your chapters
 
 <details>
-<summary><b>Wiring your data in</b></summary>
+<summary><b>Figures</b></summary>
 
-`metadata.tex` defines simple commands that the rest of the document consumes:
-
-```latex
-\newcommand*{\thesistitle}{Full Title of Your Thesis}
-\newcommand*{\thesisauthor}{Your Full Name}
-\newcommand*{\thesisdegree}{Master of Science}
-\newcommand*{\thesisprogram}{Micro and Nanotechnology Engineering}
-\newcommand*{\thesisuniversity}{NOVA University Lisbon}
-\newcommand*{\thesissupervisors}{Supervisor One, Supervisor Two}
-```
-
-</details>
-
-## Writing
-
-<details>
-<summary><b>Figures</b> — include images and generate rules-compliant plots</summary>
-
-Put images in `figures/` (subfolders are fine) and include them with a path
-relative to that folder — `\graphicspath` is already set:
+Put images in [`figures/`](figures). Subfolders are fine; `\graphicspath` already
+points there.
 
 ```latex
 \begin{figure}[htbp]
@@ -228,22 +177,22 @@ relative to that folder — `\graphicspath` is already set:
 \end{figure}
 ```
 
-Reference it with `\cref{fig:response}` (self-updating “Figure 4.2”, with a hyperlink).
-
-Generate compliant plots with the bundled style:
+Reference it with `\cref{fig:response}` and you get "Figure 4.2" with a link, updated
+automatically. For plots, use the bundled style so the fonts and units match the
+rules.
 
 ```python
 import sys; sys.path.insert(0, "Python")
 import matplotlib.pyplot as plt, figure_style
 figure_style.use_thesis_style()
-# ... draw ...
+# draw something
 figure_style.save_figure(fig, "figures/Python/my-plot")
 ```
 
 </details>
 
 <details>
-<summary><b>Tables</b> — publication quality with <code>booktabs</code> + <code>siunitx</code></summary>
+<summary><b>Tables</b></summary>
 
 ```latex
 \begin{table}[htbp]
@@ -278,63 +227,55 @@ The \gls{serdes} block ...
 
 </details>
 
-## Compliance
+## The 33 page limit
 
-The rules cap the written content at **33 pages**. `make check` prints how many
-pages each chapter currently takes and flags anything over budget. The full
-rule-by-rule breakdown lives in [`COMPLIANCE.md`](COMPLIANCE.md).
-
-| Section | Maximum |
-| --- | --- |
-| Motivation | 1 page |
-| Summary (abstract) | 300 words (FCT-UNL) |
-| Introduction | 5 pages |
-| Materials and Methods | 2 pages (6 in industrial theses) |
-| Results and Discussion | 20 pages |
-| Conclusions and Future Perspectives | 2 pages |
-| References | 2 pages |
-| **Total written content** | **33 pages** |
+The department caps the written chapters at 33 pages. Run `make check` and it prints
+how many pages each chapter takes and flags the ones over budget. The full breakdown
+is in [`COMPLIANCE.md`](COMPLIANCE.md).
 
 ## Requirements
 
-- A full TeX Live 2023+ (or MiKTeX/MacTeX) with `pdflatex`, `bibtex`,
-  `makeglossaries` and **xindy** (for the glossary).
-- Python 3 only if you use the figure helpers or the page-budget report.
+A full TeX Live 2023 or newer, or MiKTeX or MacTeX, with `pdflatex`, `bibtex`,
+`makeglossaries` and xindy. Python 3 is only needed for the figure helpers and the
+page count report.
 
-## Troubleshooting
+## When something breaks
 
 <details>
-<summary><b>Glossary lists are empty</b></summary>
+<summary><b>The abbreviation and notation lists are empty</b></summary>
 
-Run `makeglossaries thesis` (or just run `make`, which does it for you). xindy must be installed.
+Run `makeglossaries thesis`, or just run `make`, which does it for you. xindy has to
+be installed.
 
 </details>
 
 <details>
-<summary><b>Bibliography is empty</b></summary>
+<summary><b>The bibliography is empty</b></summary>
 
-Run `bibtex thesis` between pdflatex passes, or use `make`. Check that your `\cite` keys exist in `bibliography.bib`.
+Run `bibtex thesis` between the pdflatex passes, or use `make`. Check that the keys
+you cite exist in `bibliography.bib`.
 
 </details>
 
 <details>
-<summary><b>“File <code>cover.pdf</code> not found”</b></summary>
+<summary><b>LaTeX cannot find cover.pdf</b></summary>
 
-Run `make cover` first; the main document warns but still builds without it.
+Run `make cover` first. The main document warns and still builds without it.
 
 </details>
 
 <details>
 <summary><b>Overfull boxes</b></summary>
 
-Usually harmless; enable `\usepackage{showframe}` in `thesis.tex` temporarily to see the text block.
+Usually harmless. If you want to see the text block, add
+`\usepackage{showframe}` to `thesis.tex` for a moment.
 
 </details>
 
 ## Contributing
 
-Issues and pull requests are welcome. Please keep the template compiling
-cleanly (`make`) and keep personal data out of the committed files.
+Issues and pull requests are welcome. Keep `make` building cleanly, and keep your
+personal details out of the committed files.
 
 ## License
 
